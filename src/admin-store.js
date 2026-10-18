@@ -15,7 +15,8 @@ export const STORAGE_KEYS = {
   SUBMISSION_LOGS: 'pysublime_submission_logs',
   SCHOOL_STUDENTS: 'pysublime_school_students',
   GOOGLE_USERS: 'pysublime_google_users',
-  CURRENT_USER: 'pysublime_current_user'
+  CURRENT_USER: 'pysublime_current_user',
+  ADMIN_CREDENTIALS: 'pysublime_admin_credentials'
 };
 
 export const DEFAULT_SETTINGS = {
@@ -441,6 +442,7 @@ class AdminStore {
 
     const sessionUser = {
       type: 'school',
+      role: 'student',
       username: student.username,
       fullName: student.fullName,
       className: student.className,
@@ -450,6 +452,58 @@ class AdminStore {
 
     this.setCurrentUser(sessionUser);
     return sessionUser;
+  }
+
+  // === QUẢN TRỊ VIÊN (ADMIN AUTHENTICATION) ===
+  getAdminCredentials() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.ADMIN_CREDENTIALS);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      username: 'admin',
+      password: 'admin123'
+    };
+  }
+
+  saveAdminCredentials(username, password) {
+    const creds = {
+      username: (username || 'admin').trim(),
+      password: (password || 'admin123').trim()
+    };
+    localStorage.setItem(STORAGE_KEYS.ADMIN_CREDENTIALS, JSON.stringify(creds));
+    return creds;
+  }
+
+  verifyAdminLogin(username, password) {
+    const creds = this.getAdminCredentials();
+    const u = (username || '').trim().toLowerCase();
+    const p = (password || '').trim();
+
+    if (u !== creds.username.toLowerCase()) {
+      throw new Error(`Tên đăng nhập quản trị không đúng! (Mặc định: ${creds.username})`);
+    }
+
+    if (p !== creds.password) {
+      throw new Error(`Mật khẩu quản trị không đúng! (Mặc định: admin123)`);
+    }
+
+    const adminUser = {
+      type: 'admin',
+      role: 'admin',
+      username: creds.username,
+      fullName: 'Quản Trị Viên (Admin)',
+      email: 'admin@pysublime.local',
+      loginAt: new Date().toISOString()
+    };
+
+    this.setCurrentUser(adminUser);
+    return adminUser;
+  }
+
+  isAdminLoggedIn() {
+    const user = this.getCurrentUser();
+    return Boolean(user && user.role === 'admin');
   }
 
   // === THỐNG KÊ TỔNG QUAN (ANALYTICS) ===

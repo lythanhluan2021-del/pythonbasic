@@ -5,6 +5,7 @@
 
 import { adminStore } from './admin-store.js';
 import { DriveSyncManager } from './drive-sync.js';
+import * as XLSX from 'xlsx';
 
 class AdminController {
   constructor() {
@@ -14,6 +15,12 @@ class AdminController {
   }
 
   init() {
+    // 0. Bắt buộc đăng nhập tài khoản Quản trị viên (Admin Protection Guard)
+    if (!adminStore.isAdminLoggedIn()) {
+      window.location.replace('/login.html?redirect=admin');
+      return;
+    }
+
     console.log("Khởi động PySublime Admin Dashboard...");
     this.bindNavigation();
     this.loadOverview();
@@ -1095,51 +1102,181 @@ class AdminController {
     document.getElementById('btn-sync-students-drive')?.addEventListener('click', () => this.syncStudentsToDriveSheet());
     document.getElementById('btn-sync-google-sheet')?.addEventListener('click', () => this.syncGoogleUsersFromSheet());
 
-    // Upload file danh sách học sinh
+    // Upload file danh sách học sinh (Hỗ trợ .xlsx, .xls, .csv, .json)
     const fileInput = document.getElementById('input-upload-students-file');
     document.getElementById('btn-import-students-file')?.addEventListener('click', () => fileInput?.click());
 
-    fileInput?.addEventListener('change', (e) => {
+    fileInput?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const content = evt.target.result;
-          let parsedRows = [];
+      try {
+        this.showToast(`Đang phân tích file ${file.name}...`);
+        const parsedRows = await this.parseUploadedStudentsFile(file);
 
-          if (file.name.endsWith('.json')) {
-            parsedRows = JSON.parse(content);
-          } else {
-            // Parse CSV format (Mã HS, Họ tên, Lớp, Mật khẩu)
-            const lines = content.split(/\r?\n/).filter(line => line.trim());
-            for (let i = 0; i < lines.length; i++) {
-              const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
-              if (cols.length >= 2 && !cols[0].toLowerCase().includes('mã') && !cols[0].toLowerCase().includes('username')) {
-                parsedRows.push({
-                  username: cols[0],
-                  fullName: cols[1],
-                  className: cols[2] || '10A1',
-                  password: cols[3] || '123'
-                });
-              }
+        if (parsedRows.length > 0) {
+          const added = adminStore.importStudentsFromList(parsedRows);
+          this.showToast(`Đã nhập thành công ${added} học sinh từ file ${file.name}!`);
+          this.renderSchoolStudents();
+        } else {
+          alert("Không tìm thấy dữ liệu học sinh nào trong file!");
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        fileInput.value = '';
+      }
+    });
+  }
+
+  // === PHÂN TÍCH FILE DANH SÁCH HỌC SINH (HỖ TRỢ EXCEL .XLSX, .XLS, CSV, JSON) ===
+  parseUploadedStudentsFile(file) {
+    return new Promise((resolve, reject) => {
+      const fileName = file.name.toLowerCase();
+
+      if (fileName.endsWith('.json')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            resolve(Array.isArray(data) ? data : []);
+          } catch (err) {
+            reject(new Error("Lỗi đọc file JSON: " + err.message));
+          }
+        };
+        reader.onerror = () => reject(new Error("Không thể đọc file"));
+        reader.readAsText(file);
+        return;
+      }
+
+      // Xử lý file Excel (.xlsx, .xls) hoặc file bảng CSV / TXT
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const buffer = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          if (!firstSheetName) {
+            throw new Error("File Excel không có trang tính (sheet) nào!");
+          }
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!rawGrid || rawGrid.length === 0) {
+            throw new Error("File Excel không có dữ liệu!");
+          }
+
+          // Tự động nhận diện dòng tiêu đề (Header row)
+          let headerRowIdx = -1;
+          const colMap = {
+            username: -1,
+            name: -1,
+            ho: -1,
+            ten: -1,
+            class: -1,
+            password: -1,
+            stt: -1
+          };
+
+          for (let r = 0; r < Math.min(rawGrid.length, 12); r++) {
+            const row = rawGrid[r].map(c => String(c).toLowerCase().trim());
+            const hasUsername = row.some(c => c.includes('mã') || c.includes('username') || c.includes('đăng nhập') || c.includes('tài khoản'));
+            const hasName = row.some(c => c.includes('họ') || c.includes('tên') || c.includes('fullname') || c.includes('name'));
+
+            if (hasUsername || hasName) {
+              headerRowIdx = r;
+              row.forEach((cell, idx) => {
+                if (cell.includes('mã') || cell.includes('username') || cell.includes('đăng nhập') || cell.includes('tài khoản')) {
+                  if (colMap.username === -1) colMap.username = idx;
+                } else if (cell === 'họ và tên' || cell === 'họ tên' || cell === 'fullname' || cell === 'tên học sinh' || cell === 'họ và tên học sinh') {
+                  if (colMap.name === -1) colMap.name = idx;
+                } else if (cell === 'họ' || cell === 'họ đệm' || cell === 'họ lót') {
+                  if (colMap.ho === -1) colMap.ho = idx;
+                } else if (cell === 'tên') {
+                  if (colMap.ten === -1) colMap.ten = idx;
+                } else if (cell.includes('lớp') || cell.includes('class') || cell.includes('khóa')) {
+                  if (colMap.class === -1) colMap.class = idx;
+                } else if (cell.includes('mật khẩu') || cell.includes('password') || cell.includes('pass')) {
+                  if (colMap.password === -1) colMap.password = idx;
+                } else if (cell === 'stt' || cell.includes('thứ tự')) {
+                  if (colMap.stt === -1) colMap.stt = idx;
+                }
+              });
+              break;
             }
           }
 
-          if (parsedRows.length > 0) {
-            const added = adminStore.importStudentsFromList(parsedRows);
-            this.showToast(`Đã nhập thành công ${added} học sinh từ file ${file.name}!`);
-            this.renderSchoolStudents();
-          } else {
-            alert("File không chứa dữ liệu học sinh hợp lệ!");
+          const parsedStudents = [];
+          const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
+
+          for (let r = startRow; r < rawGrid.length; r++) {
+            const row = rawGrid[r];
+            if (!row || row.length === 0) continue;
+
+            let username = '';
+            let fullName = '';
+            let className = '';
+            let password = '123';
+
+            if (headerRowIdx !== -1) {
+              if (colMap.username !== -1 && row[colMap.username] !== undefined && row[colMap.username] !== '') {
+                username = String(row[colMap.username]).trim();
+              }
+              if (colMap.name !== -1 && row[colMap.name]) {
+                fullName = String(row[colMap.name]).trim();
+              } else if (colMap.ho !== -1 || colMap.ten !== -1) {
+                const ho = colMap.ho !== -1 ? String(row[colMap.ho] || '').trim() : '';
+                const ten = colMap.ten !== -1 ? String(row[colMap.ten] || '').trim() : '';
+                fullName = `${ho} ${ten}`.trim();
+              }
+              if (colMap.class !== -1 && row[colMap.class]) {
+                className = String(row[colMap.class]).trim();
+              }
+              if (colMap.password !== -1 && row[colMap.password]) {
+                password = String(row[colMap.password]).trim();
+              }
+              if (!username && colMap.stt !== -1 && row[colMap.stt] !== undefined && row[colMap.stt] !== '') {
+                const sttNum = parseInt(row[colMap.stt], 10);
+                const sttStr = sttNum < 10 ? `0${sttNum}` : `${sttNum}`;
+                username = `HS${(className || '10A1').replace(/\s+/g, '')}_${sttStr}`;
+              }
+            } else {
+              // Dự phòng vị trí cột khi không có tiêu đề
+              username = String(row[0] || '').trim();
+              fullName = String(row[1] || '').trim();
+              className = String(row[2] || '').trim();
+              if (row[3]) password = String(row[3]).trim();
+            }
+
+            // Bỏ qua dòng trống
+            if (!username && !fullName) continue;
+
+            // Nếu thiếu username nhưng có tên, tự tạo username
+            if (!username && fullName) {
+              const stt = (parsedStudents.length + 1) < 10 ? `0${parsedStudents.length + 1}` : `${parsedStudents.length + 1}`;
+              username = `HS${(className || '10A1').replace(/\s+/g, '')}_${stt}`;
+            }
+
+            if (!fullName && username) {
+              fullName = username;
+            }
+
+            parsedStudents.push({
+              username: username.toUpperCase(),
+              fullName: fullName,
+              className: className || '10A1',
+              password: password || '123'
+            });
           }
+
+          resolve(parsedStudents);
         } catch (err) {
-          alert("Lỗi đọc file: " + err.message);
+          reject(new Error("Lỗi khi đọc file Excel: " + err.message));
         }
       };
-      reader.readAsText(file);
-      fileInput.value = '';
+
+      reader.onerror = () => reject(new Error("Không thể đọc file"));
+      reader.readAsArrayBuffer(file);
     });
   }
 
@@ -1259,6 +1396,16 @@ class AdminController {
         this.showToast("Đã xóa toàn bộ lịch sử bài nộp học sinh!");
       }
     });
+
+    // Đăng xuất Admin
+    const handleAdminLogout = () => {
+      if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi quyền Quản trị viên không?")) {
+        adminStore.logoutCurrentUser();
+        window.location.href = '/login.html?redirect=admin';
+      }
+    };
+    document.getElementById('btn-admin-logout')?.addEventListener('click', handleAdminLogout);
+    document.getElementById('btn-admin-top-logout')?.addEventListener('click', handleAdminLogout);
   }
 
   escape(str) {

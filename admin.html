@@ -13,6 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/src/admin.css">
+  <!-- Thư viện SheetJS đọc file Excel (.xlsx, .xls) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -62,6 +64,9 @@
       <a href="/" class="btn-switch-student" title="Mở trang học sinh">
         <span>👁️ Xem Trang Học Sinh</span>
       </a>
+      <button class="btn-admin-danger" id="btn-admin-logout" style="width: 100%; margin-top: 8px; padding: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span>🚪 Đăng Xuất Admin</span>
+      </button>
     </div>
   </aside>
 
@@ -82,6 +87,9 @@
         <a href="/" class="btn-admin-secondary">
           <span>Trang Người Dùng ↗</span>
         </a>
+        <button class="btn-admin-secondary" id="btn-admin-top-logout" title="Đăng xuất khỏi tài khoản Quản trị" style="border-color: rgba(249, 38, 114, 0.4); color: var(--accent-pink);">
+          <span>🚪 Đăng Xuất</span>
+        </button>
       </div>
     </header>
 
@@ -448,8 +456,8 @@
               <button class="btn-admin-secondary" id="btn-sync-students-drive" title="Đồng bộ danh sách học sinh lên Google Sheet">
                 <span>☁️ Lưu Lên Google Sheet</span>
               </button>
-              <button class="btn-admin-secondary" id="btn-import-students-file" title="Tải file danh sách học sinh (.csv, .json)">
-                <span>📥 Nhập Từ File</span>
+              <button class="btn-admin-secondary" id="btn-import-students-file" title="Tải file danh sách học sinh Excel (.xlsx, .xls) hoặc CSV, JSON">
+                <span>📥 Nhập Từ File (Excel/CSV)</span>
               </button>
             </div>
           </div>
@@ -812,7 +820,7 @@
 
   <!-- Hidden file inputs -->
   <input type="file" id="input-import-json-file" accept=".json" style="display: none;">
-  <input type="file" id="input-upload-students-file" accept=".csv, .json, .txt" style="display: none;">
+  <input type="file" id="input-upload-students-file" accept=".xlsx, .xls, .csv, .json, .txt" style="display: none;">
 
   <!-- Toast container for instant feedback -->
   <div class="toast-container" id="toast-container"></div>

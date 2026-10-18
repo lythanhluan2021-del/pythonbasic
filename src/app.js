@@ -20,7 +20,14 @@ class PySublimeApp {
   }
 
   async init() {
-    console.log("Khởi động PySublime Web App...");
+    // 0. Bắt buộc đăng nhập trước khi vào học (Login-First Gate)
+    const currentUser = adminStore.getCurrentUser();
+    if (!currentUser) {
+      window.location.replace('/login.html');
+      return;
+    }
+
+    console.log("Khởi động PySublime Web App với người dùng:", currentUser.fullName);
 
     // 1. Áp dụng cấu hình tính năng từ Admin Store
     this.applySettings(this.settings);
@@ -711,7 +718,10 @@ class PySublimeApp {
       };
 
       if (badge) {
-        if (currentUser.type === 'school') {
+        if (currentUser.role === 'admin' || currentUser.type === 'admin') {
+          badge.innerHTML = `🛡️ <strong>Quản Trị Viên</strong> <span style="font-size:11px; opacity:0.8;">(Admin)</span>`;
+          badge.title = 'Tài khoản Quản trị viên - Bấm để vào trang Quản trị Admin';
+        } else if (currentUser.type === 'school') {
           badge.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong> <span style="font-size:11px; opacity:0.8;">(${this.escapeHtml(currentUser.className || currentUser.username)})</span>`;
           badge.title = `Học sinh trường: ${currentUser.fullName} (${currentUser.username}) - Bấm để xem thông tin`;
         } else {

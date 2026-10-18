@@ -117,19 +117,20 @@
 
     .auth-tab-btn {
       flex: 1;
-      padding: 14px 10px;
+      padding: 13px 8px;
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       border-bottom: 2px solid transparent;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
 
     .auth-tab-btn:hover {
@@ -141,6 +142,14 @@
       color: var(--accent-orange);
       border-bottom-color: var(--accent-orange);
       background: rgba(253, 151, 31, 0.06);
+    }
+
+    @media (max-width: 440px) {
+      .auth-tab-btn {
+        font-size: 11.5px;
+        padding: 12px 4px;
+        gap: 4px;
+      }
     }
 
     .login-body {
@@ -335,6 +344,9 @@
       <button class="auth-tab-btn" id="tab-btn-google" data-target="panel-google">
         <span>🌐</span> Tài Khoản Google
       </button>
+      <button class="auth-tab-btn" id="tab-btn-admin" data-target="panel-admin">
+        <span>🛡️</span> Quản Trị Viên
+      </button>
     </div>
 
     <div class="login-body">
@@ -362,8 +374,8 @@
         </form>
 
         <div class="notice-box">
-          💡 <strong>Hướng dẫn đăng nhập:</strong><br>
-          Vui lòng nhập <strong>Mã học sinh</strong> và <strong>Mật khẩu</strong> do giáo viên hoặc nhà trường cấp để vào học và lưu tiến độ.
+          💡 <strong>Hướng dẫn đăng nhập học sinh:</strong><br>
+          Vui lòng nhập <strong>Mã học sinh</strong> và <strong>Mật khẩu</strong> do giáo viên hoặc nhà trường cấp để vào học và lưu bài làm.
         </div>
       </div>
 
@@ -389,11 +401,39 @@
           🌐 <strong>Lưu ý:</strong> Tài khoản Google được tách riêng biệt với học sinh của trường. Admin có thể xem danh sách và quản lý quyền truy cập trong Dashboard Admin.
         </div>
       </div>
+
+      <!-- ==============================================
+           PHƯƠNG THỨC 3: QUẢN TRỊ VIÊN (ADMIN)
+           ============================================== -->
+      <div class="auth-panel" id="panel-admin">
+        <form id="form-admin-login">
+          <div class="form-group">
+            <label class="form-label" for="input-admin-username">Tên Đăng Nhập Quản Trị:</label>
+            <input type="text" id="input-admin-username" class="form-input" placeholder="Tên đăng nhập admin" value="admin" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-admin-password">Mật Khẩu Quản Trị:</label>
+            <input type="password" id="input-admin-password" class="form-input" placeholder="Mật khẩu admin" value="admin123" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn-submit" id="btn-submit-admin" style="background: linear-gradient(135deg, #a6e22e, #66d9ef); color: #141512;">
+            <span>🔐 Đăng Nhập Quản Trị Viên</span>
+          </button>
+        </form>
+
+        <div class="notice-box" style="margin-top: 20px; border-color: rgba(166, 226, 46, 0.4); background: rgba(166, 226, 46, 0.05);">
+          🛡️ <strong>Thông tin đăng nhập Admin mặc định:</strong><br>
+          • Tên đăng nhập: <code>admin</code><br>
+          • Mật khẩu: <code>admin123</code><br>
+          <em>(Thầy/Cô có thể đổi mật khẩu này bất kỳ lúc nào trong Bảng Điều Khiển Quản Trị).</em>
+        </div>
+      </div>
     </div>
 
     <div class="login-footer">
-      <a href="/" class="link-sub">← Vào học chế độ Khách (Guest)</a>
-      <a href="/admin" class="link-sub">⚙️ Quản Trị Viên</a>
+      <span style="color: var(--text-muted); font-size: 12px;">Hệ thống học lập trình PySublime</span>
+      <span style="color: var(--accent-orange); font-size: 12px; font-weight: 600;">Bảo mật &amp; Phân quyền</span>
     </div>
   </div>
 

@@ -15,11 +15,13 @@ class LoginController {
     this.bindTabs();
     this.bindSchoolLogin();
     this.bindGoogleLogin();
+    this.bindAdminLogin();
 
-    // Nếu đã đăng nhập rồi, tự động chuyển về trang chủ hoặc thông báo
-    const current = adminStore.getCurrentUser();
-    if (current) {
-      console.log("Đã có phiên đăng nhập:", current);
+    // Tự động kích hoạt tab Admin nếu được điều hướng từ trang Admin
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('redirect') === 'admin' || window.location.hash === '#admin') {
+      const adminTab = document.getElementById('tab-btn-admin');
+      if (adminTab) adminTab.click();
     }
   }
 
@@ -174,6 +176,38 @@ class LoginController {
         window.location.href = '/';
       });
     }
+  }
+
+  bindAdminLogin() {
+    const form = document.getElementById('form-admin-login');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.clearError();
+
+      const username = document.getElementById('input-admin-username').value.trim();
+      const password = document.getElementById('input-admin-password').value.trim();
+      const btn = document.getElementById('btn-submit-admin');
+
+      if (!username || !password) {
+        this.showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu quản trị!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Đang xác thực...</span>';
+
+      try {
+        adminStore.verifyAdminLogin(username, password);
+        window.location.href = '/admin.html';
+      } catch (err) {
+        this.showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔐 Đăng Nhập Quản Trị Viên</span>';
+      }
+    });
   }
 }
 

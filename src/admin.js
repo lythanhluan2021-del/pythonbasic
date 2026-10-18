@@ -621,8 +621,17 @@ class AdminController {
   loadUserManagement() {
     this.renderSchoolStudents();
     this.renderGoogleUsers();
+    this.renderAdminAccountInfo();
     this.bindUserSubtabs();
     this.bindUserActionEvents();
+  }
+
+  renderAdminAccountInfo() {
+    const creds = adminStore.getAdminCredentials();
+    const inputUser = document.getElementById('admin-acc-username');
+    const inputPwd = document.getElementById('admin-acc-password');
+    if (inputUser) inputUser.value = creds.username;
+    if (inputPwd) inputPwd.value = creds.password;
   }
 
   bindUserSubtabs() {
@@ -971,29 +980,70 @@ class AdminController {
     }
 
     const students = adminStore.getSchoolStudents();
+    const adminCreds = adminStore.getAdminCredentials();
     const btn = document.getElementById('btn-sync-students-drive');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳ Đang lưu lên Sheet...</span>';
+      btn.innerHTML = `<span>⏳ Đang lưu ${students.length} HS...</span>`;
     }
 
     try {
+      this.showToast(`Đang gửi ${students.length} học sinh và tài khoản Admin lên Google Sheet...`);
+
+      // Gửi POST dạng text/plain để không bị CORS preflight chặn trên Apps Script
       await fetch(this.driveSync.getApiUrl(), {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          action: 'sync_school_students',
-          students: students
+          action: 'sync_database',
+          students: students,
+          admin: adminCreds
         })
       });
-      this.showToast(`Đã gửi đồng bộ ${students.length} học sinh vào Sheet Tai_Khoan_Hoc_Sinh!`);
+
+      this.showToast(`✅ Đã gửi lưu thành công ${students.length} học sinh & tài khoản Admin vào Google Sheet!`);
     } catch (e) {
       this.showToast("Lỗi đồng bộ lên Google Sheet: " + e.message, true);
     } finally {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<span>☁️ Lưu Lên Google Sheet</span>';
+      }
+    }
+  }
+
+  async syncAdminCredentialsToDrive() {
+    if (!this.driveSync.isConnected()) {
+      alert("Chưa kết nối Google Drive! Vui lòng vào tab Google Drive CMS để lưu Web App URL trước.");
+      return;
+    }
+
+    const adminCreds = adminStore.getAdminCredentials();
+    const btn = document.getElementById('btn-sync-admin-to-drive');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Đang lưu Admin...</span>';
+    }
+
+    try {
+      await fetch(this.driveSync.getApiUrl(), {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'sync_admin',
+          admin: adminCreds
+        })
+      });
+
+      this.showToast("✅ Đã lưu thông tin tài khoản Admin vào Sheet Tai_Khoan_Admin!");
+    } catch (e) {
+      this.showToast("Lỗi lưu tài khoản Admin: " + e.message, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>☁️ Lưu Lên Google Sheet (Tai_Khoan_Admin)</span>';
       }
     }
   }
@@ -1102,6 +1152,32 @@ class AdminController {
     document.getElementById('btn-sync-students-drive')?.addEventListener('click', () => this.syncStudentsToDriveSheet());
     document.getElementById('btn-sync-google-sheet')?.addEventListener('click', () => this.syncGoogleUsersFromSheet());
 
+    // Sự kiện quản lý tài khoản Admin trong Subpanel Admin
+    document.getElementById('btn-toggle-admin-acc-pwd')?.addEventListener('click', () => {
+      const pwdInput = document.getElementById('admin-acc-password');
+      if (pwdInput) {
+        pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
+      }
+    });
+
+    document.getElementById('btn-save-admin-acc')?.addEventListener('click', () => {
+      const u = document.getElementById('admin-acc-username')?.value.trim();
+      const p = document.getElementById('admin-acc-password')?.value.trim();
+      if (!u || !p) {
+        alert("Vui lòng nhập tên đăng nhập và mật khẩu Admin!");
+        return;
+      }
+      adminStore.saveAdminCredentials(u, p);
+      this.showToast("Đã lưu cập nhật thông tin tài khoản Quản trị Admin!");
+      if (this.driveSync.isConnected()) {
+        this.syncAdminCredentialsToDrive();
+      }
+    });
+
+    document.getElementById('btn-sync-admin-to-drive')?.addEventListener('click', () => {
+      this.syncAdminCredentialsToDrive();
+    });
+
     // Upload file danh sách học sinh (Hỗ trợ .xlsx, .xls, .csv, .json)
     const fileInput = document.getElementById('input-upload-students-file');
     document.getElementById('btn-import-students-file')?.addEventListener('click', () => fileInput?.click());
@@ -1118,6 +1194,13 @@ class AdminController {
           const added = adminStore.importStudentsFromList(parsedRows);
           this.showToast(`Đã nhập thành công ${added} học sinh từ file ${file.name}!`);
           this.renderSchoolStudents();
+
+          // Tự động lưu lên Google Sheet nếu Drive đã kết nối
+          if (this.driveSync.isConnected()) {
+            this.syncStudentsToDriveSheet();
+          } else {
+            this.showToast("Mẹo: Hãy kết nối Google Drive để lưu dữ liệu lên đám mây lâu dài!", false);
+          }
         } else {
           alert("Không tìm thấy dữ liệu học sinh nào trong file!");
         }

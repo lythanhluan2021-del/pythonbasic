@@ -462,7 +462,7 @@
             </div>
           </div>
 
-          <!-- Thanh chuyển tab giữa Học sinh trường và Google -->
+          <!-- Thanh chuyển tab giữa Học sinh trường, Google và Admin -->
           <div class="auth-subtabs-nav">
             <button class="auth-subtab-btn active" id="btn-subtab-school" data-target="subpanel-school-users">
               <span>🎓</span> Học Sinh Nhà Trường
@@ -471,6 +471,10 @@
             <button class="auth-subtab-btn" id="btn-subtab-google" data-target="subpanel-google-users">
               <span>🌐</span> Tài Khoản Google (Ngoài Trường)
               <span class="badge-pill" id="badge-count-google-users">0</span>
+            </button>
+            <button class="auth-subtab-btn" id="btn-subtab-admin" data-target="subpanel-admin-account">
+              <span>🛡️</span> Tài Khoản Quản Trị (Admin)
+              <span class="badge-pill" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">1</span>
             </button>
           </div>
 
@@ -548,6 +552,68 @@
             </div>
           </div>
 
+          <!-- SUB-PANEL 3: TÀI KHOẢN QUẢN TRỊ ADMIN -->
+          <div class="subpanel-user" id="subpanel-admin-account" style="display: none; padding: 24px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; max-width: 680px;">
+              <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+                <div style="width: 56px; height: 56px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                  🛡️
+                </div>
+                <div>
+                  <h3 style="margin: 0; font-size: 18px; color: var(--text-color);">Tài Khoản Quản Trị Viên (Admin)</h3>
+                  <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-muted);">
+                    Được lưu trữ an toàn trong Sheet <code>Tai_Khoan_Admin</code> trên Google Drive của Thầy/Cô.
+                  </p>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                  <label class="form-label" style="display: block; margin-bottom: 6px; font-weight: 500;">Tên Đăng Nhập Quản Trị:</label>
+                  <input type="text" id="admin-acc-username" class="admin-input" style="width: 100%;" value="admin">
+                </div>
+
+                <div>
+                  <label class="form-label" style="display: block; margin-bottom: 6px; font-weight: 500;">Mật Khẩu Quản Trị:</label>
+                  <div style="position: relative;">
+                    <input type="password" id="admin-acc-password" class="admin-input" style="width: 100%; padding-right: 44px;" value="admin123">
+                    <button type="button" id="btn-toggle-admin-acc-pwd" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 16px;">👁️</button>
+                  </div>
+                  <small style="color: var(--text-muted); display: block; margin-top: 4px;">Mặc định: <code>admin123</code>. Thầy/Cô có thể đổi mật khẩu bất kỳ lúc nào.</small>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
+                  <button class="btn-admin-primary" id="btn-save-admin-acc">
+                    <span>💾 Cập Nhật Tài Khoản Admin</span>
+                  </button>
+                  <button class="btn-admin-secondary" id="btn-sync-admin-to-drive">
+                    <span>☁️ Lưu Lên Google Sheet (Tai_Khoan_Admin)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bảng tóm tắt 4 Tab CSDL Google Sheet -->
+              <div style="margin-top: 28px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+                <h4 style="margin: 0 0 12px; font-size: 14px; color: var(--text-color); display: flex; align-items: center; gap: 8px;">
+                  <span>🗂️</span> Cấu Trúc Cơ Sở Dữ Liệu 4 Sheet Chuẩn Trên Google Drive:
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px;">
+                  <div style="padding: 10px 14px; background: rgba(244, 204, 204, 0.1); border-left: 3px solid #f87171; border-radius: 6px;">
+                    <strong style="color: #f87171;">1. Tai_Khoan_Admin:</strong> Lưu tên đăng nhập, mật khẩu quản trị và thời gian cập nhật của Thầy/Cô.
+                  </div>
+                  <div style="padding: 10px 14px; background: rgba(217, 234, 211, 0.1); border-left: 3px solid #4ade80; border-radius: 6px;">
+                    <strong style="color: #4ade80;">2. Tai_Khoan_Hoc_Sinh:</strong> Lưu toàn bộ tài khoản học sinh nhà trường (hỗ trợ tự động mở rộng không giới hạn học sinh).
+                  </div>
+                  <div style="padding: 10px 14px; background: rgba(207, 226, 243, 0.1); border-left: 3px solid #60a5fa; border-radius: 6px;">
+                    <strong style="color: #60a5fa;">3. Tai_Khoan_Google:</strong> Lưu người dùng tự do đăng nhập nhanh qua Google ngoài trường.
+                  </div>
+                  <div style="padding: 10px 14px; background: rgba(255, 242, 204, 0.1); border-left: 3px solid #fbbf24; border-radius: 6px;">
+                    <strong style="color: #fbbf24;">4. Bang_Diem_Bai_Tap:</strong> Lưu lịch sử làm bài tập Python, điểm số, và mã nguồn học sinh nộp tự động.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

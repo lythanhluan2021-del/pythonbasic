@@ -178,37 +178,56 @@ class PySublimeApp {
       btnDriveModal.addEventListener('click', () => this.openDriveModal());
     }
 
-    // === NÚT TÀI KHOẢN HỌC SINH / BADGE ===
+    // === NÚT TÀI KHOẢN HỌC SINH / ADMIN: BẬT/TẮT MENU TÍCH HỢP ĐĂNG XUẤT ===
     const btnStudentBadge = document.getElementById('student-badge-btn');
-    if (btnStudentBadge) {
-      btnStudentBadge.addEventListener('click', () => {
-        const currentUser = adminStore.getCurrentUser();
-        if (!currentUser) {
-          window.location.href = '/login.html';
+    const userDropdownMenu = document.getElementById('user-dropdown-menu');
+    const userWrapper = document.getElementById('user-account-wrapper');
+
+    if (btnStudentBadge && userDropdownMenu) {
+      btnStudentBadge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = userDropdownMenu.classList.contains('show');
+        if (isOpen) {
+          this.closeUserDropdown();
         } else {
-          this.openStudentModal();
+          this.openUserDropdown();
+        }
+      });
+
+      // Đóng menu khi click ra ngoài
+      document.addEventListener('click', (e) => {
+        if (userWrapper && !userWrapper.contains(e.target)) {
+          this.closeUserDropdown();
+        }
+      });
+
+      // Đóng khi nhấn phím Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.closeUserDropdown();
         }
       });
     }
 
-    const btnStudentModal = document.getElementById('btn-open-student-modal');
-    if (btnStudentModal) {
-      btnStudentModal.addEventListener('click', () => this.openStudentModal());
-    }
-
-    // === NÚT AUTH ACTION (ĐĂNG NHẬP / ĐĂNG XUẤT) ===
-    const btnAuthAction = document.getElementById('btn-auth-action');
-    if (btnAuthAction) {
-      btnAuthAction.addEventListener('click', () => {
+    // === NÚT ĐĂNG XUẤT NẰM TRONG MENU TÀI KHOẢN ===
+    const btnDropdownLogout = document.getElementById('dropdown-btn-logout');
+    if (btnDropdownLogout) {
+      btnDropdownLogout.addEventListener('click', () => {
         const currentUser = adminStore.getCurrentUser();
-        if (currentUser) {
-          if (confirm(`Bạn có muốn đăng xuất tài khoản "${currentUser.fullName}" không?`)) {
-            adminStore.logoutCurrentUser();
-            window.location.href = '/login.html';
-          }
-        } else {
+        const name = currentUser ? currentUser.fullName : 'bạn';
+        if (confirm(`Bạn có chắc chắn muốn thoát khỏi tài khoản "${name}" không?`)) {
+          adminStore.logoutCurrentUser();
           window.location.href = '/login.html';
         }
+      });
+    }
+
+    // Nút mở Google Drive trong Menu tài khoản
+    const btnDropdownDrive = document.getElementById('dropdown-btn-drive');
+    if (btnDropdownDrive) {
+      btnDropdownDrive.addEventListener('click', () => {
+        this.closeUserDropdown();
+        this.openDriveModal();
       });
     }
 
@@ -821,17 +840,41 @@ class PySublimeApp {
     }
   }
 
+  openUserDropdown() {
+    const menu = document.getElementById('user-dropdown-menu');
+    const btn = document.getElementById('student-badge-btn');
+    if (menu) menu.classList.add('show');
+    if (btn) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  closeUserDropdown() {
+    const menu = document.getElementById('user-dropdown-menu');
+    const btn = document.getElementById('student-badge-btn');
+    if (menu) menu.classList.remove('show');
+    if (btn) {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
   updateStudentBadgeUI() {
-    const badge = document.getElementById('student-badge-btn');
-    const authBtn = document.getElementById('btn-auth-action');
+    const badgeLabel = document.getElementById('user-pill-label');
+    const badgeBtn = document.getElementById('student-badge-btn');
     const currentUser = adminStore.getCurrentUser();
 
-    // Kiểm soát hiển thị nút Quản Trị: Chỉ hiển thị cho Admin
+    // Các thành phần trong Menu Dropdown
+    const dropdownAvatar = document.getElementById('dropdown-avatar');
+    const dropdownName = document.getElementById('dropdown-user-name');
+    const dropdownRole = document.getElementById('dropdown-user-role');
+    const dropdownClass = document.getElementById('dropdown-user-class');
+    const dropdownId = document.getElementById('dropdown-user-id');
+    const classRow = document.getElementById('dropdown-meta-class-row');
+    const idRow = document.getElementById('dropdown-meta-id-row');
+    const linkAdmin = document.getElementById('dropdown-link-admin');
     const adminHeaderLink = document.getElementById('btn-admin-header-link');
-    if (adminHeaderLink) {
-      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.type === 'admin');
-      adminHeaderLink.style.display = isAdmin ? 'inline-flex' : 'none';
-    }
 
     if (currentUser) {
       this.driveSync.student = {
@@ -840,39 +883,80 @@ class PySublimeApp {
         className: currentUser.className || (currentUser.type === 'google' ? 'Google Account' : '')
       };
 
-      if (badge) {
-        if (currentUser.role === 'admin' || currentUser.type === 'admin') {
-          badge.innerHTML = `🛡️ <strong>Admin</strong>`;
-          badge.title = 'Tài khoản Quản trị viên - Bấm để vào trang Quản trị Admin';
-        } else if (currentUser.type === 'school') {
-          badge.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
-          badge.title = `Học sinh: ${currentUser.fullName} (${currentUser.username}) - Bấm để xem thông tin`;
+      const isAdmin = currentUser.role === 'admin' || currentUser.type === 'admin';
+
+      if (adminHeaderLink) {
+        adminHeaderLink.style.display = isAdmin ? 'inline-flex' : 'none';
+      }
+
+      if (badgeBtn) {
+        badgeBtn.classList.remove('admin-tier', 'student-tier');
+        if (isAdmin) {
+          badgeBtn.classList.add('admin-tier');
+          badgeBtn.title = 'Quản trị viên: Admin - Bấm để mở menu tùy chọn & Đăng xuất';
         } else {
-          badge.innerHTML = `🌐 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
-          badge.title = `Tài khoản Google: ${currentUser.email}`;
+          badgeBtn.classList.add('student-tier');
+          badgeBtn.title = `Học sinh: ${currentUser.fullName} - Bấm để mở menu hồ sơ & Đăng xuất`;
         }
       }
 
-      if (authBtn) {
-        authBtn.innerHTML = '🚪';
-        authBtn.classList.add('logged-in');
-        authBtn.title = `Đang đăng nhập: ${currentUser.fullName}. Bấm để đăng xuất`;
+      if (badgeLabel) {
+        if (isAdmin) {
+          badgeLabel.innerHTML = `🛡️ <strong>Admin</strong>`;
+        } else if (currentUser.type === 'school') {
+          badgeLabel.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
+        } else {
+          badgeLabel.innerHTML = `🌐 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
+        }
+      }
+
+      // Điền thông tin vào dropdown
+      if (dropdownAvatar) {
+        dropdownAvatar.textContent = isAdmin ? '🛡️' : (currentUser.type === 'google' ? '🌐' : '🎓');
+      }
+      if (dropdownName) {
+        dropdownName.textContent = currentUser.fullName || (isAdmin ? 'Quản Trị Viên' : 'Học sinh');
+      }
+      if (dropdownRole) {
+        dropdownRole.textContent = isAdmin ? 'Quản Trị Viên (Admin)' : (currentUser.type === 'google' ? 'Tài Khoản Google' : 'Học Sinh');
+        dropdownRole.className = `dropdown-role-badge ${isAdmin ? 'admin' : ''}`;
+      }
+      if (dropdownClass && classRow) {
+        if (currentUser.className) {
+          classRow.style.display = 'flex';
+          dropdownClass.textContent = currentUser.className;
+        } else {
+          classRow.style.display = 'none';
+        }
+      }
+      if (dropdownId && idRow) {
+        const idVal = currentUser.username || currentUser.email;
+        if (idVal) {
+          idRow.style.display = 'flex';
+          dropdownId.textContent = idVal;
+        } else {
+          idRow.style.display = 'none';
+        }
+      }
+      if (linkAdmin) {
+        linkAdmin.style.display = isAdmin ? 'flex' : 'none';
       }
     } else {
-      if (badge) {
-        badge.innerHTML = `👤 Khách`;
-        badge.title = 'Bạn đang học ở chế độ Khách. Bấm để đăng nhập';
+      if (badgeLabel) {
+        badgeLabel.innerHTML = `👤 Khách`;
       }
-      if (authBtn) {
-        authBtn.innerHTML = '🔑';
-        authBtn.classList.remove('logged-in');
-        authBtn.title = 'Đăng nhập với tài khoản trường hoặc tài khoản Google';
+      if (dropdownName) {
+        dropdownName.textContent = 'Khách viếng thăm';
+      }
+      if (dropdownRole) {
+        dropdownRole.textContent = 'Chưa đăng nhập';
       }
     }
   }
 
   escapeHtml(str) {
-    return str
+    if (!str) return '';
+    return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');

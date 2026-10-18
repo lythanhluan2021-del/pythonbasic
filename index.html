@@ -60,15 +60,54 @@
       <button class="btn-header desktop-only btn-drive" id="btn-open-drive-modal" title="Cấu hình Google Drive">
         📁 Google Drive
       </button>
-      <button class="btn-header btn-user-pill" id="student-badge-btn" title="Hồ sơ tài khoản">
-        👤 Đang tải...
-      </button>
-      <a href="/admin.html" class="btn-header btn-admin-link" id="btn-admin-header-link" title="Mở trang Quản trị Admin" style="display: none;">
-        ⚙️ Quản Trị
-      </a>
-      <button class="btn-header btn-auth-action" id="btn-auth-action" title="Đăng nhập / Đăng xuất">
-        🚪
-      </button>
+      <!-- Khối Tài Khoản Tích Hợp Menu Đăng Xuất Thông Minh -->
+      <div class="user-account-wrapper" id="user-account-wrapper">
+        <button class="btn-header btn-user-pill" id="student-badge-btn" title="Hồ sơ tài khoản - Bấm để xem thông tin & Đăng xuất" aria-haspopup="true" aria-expanded="false">
+          <span id="user-pill-label">👤 Đang tải...</span>
+          <span class="user-pill-caret">▾</span>
+        </button>
+
+        <!-- Menu Dropdown Tài Khoản & Nút Thoát / Đăng Xuất -->
+        <div class="user-dropdown-menu" id="user-dropdown-menu" role="menu">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-avatar" id="dropdown-avatar">🎓</div>
+            <div class="user-dropdown-info">
+              <div class="dropdown-name" id="dropdown-user-name">Đang tải...</div>
+              <div class="dropdown-role-badge" id="dropdown-user-role">Học Sinh</div>
+            </div>
+          </div>
+
+          <div class="dropdown-meta-box" id="dropdown-meta-box">
+            <div class="meta-row" id="dropdown-meta-class-row">
+              <span class="meta-label">Lớp:</span>
+              <strong class="meta-value" id="dropdown-user-class">10A1</strong>
+            </div>
+            <div class="meta-row" id="dropdown-meta-id-row">
+              <span class="meta-label">Mã tài khoản:</span>
+              <code class="meta-value" id="dropdown-user-id">HS01</code>
+            </div>
+          </div>
+
+          <div class="dropdown-actions-list">
+            <a href="/admin.html" class="dropdown-action-item" id="dropdown-link-admin" style="display: none;">
+              <span class="action-icon">⚙️</span>
+              <span class="action-text">Trang Quản Trị Admin</span>
+            </a>
+            <button class="dropdown-action-item" id="dropdown-btn-drive" type="button">
+              <span class="action-icon">☁️</span>
+              <span class="action-text">Cấu Hình Google Drive CMS</span>
+            </button>
+          </div>
+
+          <div class="dropdown-footer-divider"></div>
+
+          <!-- Nút Đăng Xuất Đặt Ngay Trong Menu Tài Khoản -->
+          <button class="dropdown-btn-logout" id="dropdown-btn-logout" type="button" title="Đăng xuất khỏi phiên làm việc">
+            <span class="logout-icon">🚪</span>
+            <span class="logout-text">Đăng Xuất Tài Khoản</span>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 

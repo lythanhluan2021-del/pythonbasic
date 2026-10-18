@@ -137,25 +137,217 @@ body {
   background: rgba(166, 226, 46, 0.1);
 }
 
-.btn-auth-action {
-  font-weight: 700;
+/* === USER ACCOUNT DROPDOWN (TÍCH HỢP NÚT THOÁT / ĐĂNG XUẤT) === */
+.user-account-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-user-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-fg);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-user-pill:hover,
+.btn-user-pill.active {
+  background: rgba(255, 255, 255, 0.12);
   border-color: var(--monokai-orange);
-  color: var(--monokai-orange);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.btn-user-pill.admin-tier {
   background: rgba(253, 151, 31, 0.12);
+  border-color: rgba(253, 151, 31, 0.45);
+  color: var(--monokai-orange);
 }
 
-.btn-auth-action:hover {
-  background: rgba(253, 151, 31, 0.22);
+.btn-user-pill.student-tier {
+  background: rgba(166, 226, 46, 0.1);
+  border-color: rgba(166, 226, 46, 0.35);
+  color: var(--monokai-green);
 }
 
-.btn-auth-action.logged-in {
+.user-pill-caret {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.btn-user-pill.active .user-pill-caret {
+  transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 260px;
+  max-width: 320px;
+  background: #1e1f1c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75);
+  padding: 14px;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.user-dropdown-menu.show {
+  display: flex !important;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.user-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-dropdown-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #272822;
+  border: 2px solid var(--monokai-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.user-dropdown-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dropdown-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-role-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(166, 226, 46, 0.15);
+  color: var(--monokai-green);
+  border: 1px solid rgba(166, 226, 46, 0.3);
+  margin-top: 3px;
+}
+
+.dropdown-role-badge.admin {
+  background: rgba(253, 151, 31, 0.15);
+  color: var(--monokai-orange);
+  border-color: rgba(253, 151, 31, 0.3);
+}
+
+.dropdown-meta-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta-label {
+  color: var(--monokai-gray);
+}
+
+.meta-value {
+  color: #f8f8f2;
+}
+
+.dropdown-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-action-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--monokai-fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-action-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--monokai-orange);
+}
+
+.dropdown-footer-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 2px 0;
+}
+
+.dropdown-btn-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: rgba(249, 38, 114, 0.12);
+  border: 1px solid rgba(249, 38, 114, 0.35);
   color: var(--monokai-pink);
-  border-color: rgba(249, 38, 114, 0.4);
-  background: rgba(249, 38, 114, 0.1);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.btn-auth-action.logged-in:hover {
-  background: rgba(249, 38, 114, 0.2);
+.dropdown-btn-logout:hover {
+  background: var(--monokai-pink);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(249, 38, 114, 0.35);
 }
 
 /* === MOBILE VIEW SWITCHER TABS === */
@@ -1241,31 +1433,35 @@ body.simplified-header #btn-open-drive-modal {
   }
 
   .btn-user-pill {
-    max-width: 140px;
-    font-size: 11px;
-    padding: 4px 8px;
+    max-width: 160px;
+    font-size: 11.5px;
+    padding: 4px 10px;
     border-radius: 20px;
-    background: rgba(166, 226, 46, 0.1);
-    border-color: rgba(166, 226, 46, 0.35);
-    color: var(--monokai-green);
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  #user-pill-label {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .user-dropdown-menu {
+    position: fixed !important;
+    top: 52px !important;
+    right: 10px !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 320px !important;
   }
 
   .btn-admin-link {
     font-size: 11px !important;
     padding: 4px 8px !important;
     border-radius: 14px !important;
-  }
-
-  .btn-auth-action {
-    font-size: 12px;
-    padding: 4px 8px;
-    border-radius: 14px;
-    min-width: 32px;
-    justify-content: center;
   }
 
   /* Segmented Control 3-Tab Bar hiện đại */

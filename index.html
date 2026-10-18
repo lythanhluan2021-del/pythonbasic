@@ -3,6 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- Instant Login Protection Guard (Chặn ngay lập tức nếu chưa đăng nhập) -->
+  <script>
+    (function() {
+      try {
+        var user = sessionStorage.getItem('pysublime_current_user') || localStorage.getItem('pysublime_current_user');
+        if (!user) {
+          window.location.replace('/login.html');
+        }
+      } catch (e) {
+        window.location.replace('/login.html');
+      }
+    })();
+  </script>
   <meta name="theme-color" content="#191a18">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

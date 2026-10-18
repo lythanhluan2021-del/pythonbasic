@@ -3,6 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Instant Admin Protection Guard (Chặn ngay lập tức nếu chưa đăng nhập Quản Trị Viên) -->
+  <script>
+    (function() {
+      try {
+        var userRaw = sessionStorage.getItem('pysublime_current_user') || localStorage.getItem('pysublime_current_user');
+        if (!userRaw) {
+          window.location.replace('/login.html?redirect=admin');
+          return;
+        }
+        var user = JSON.parse(userRaw);
+        if (!user || (user.role !== 'admin' && user.type !== 'admin')) {
+          window.location.replace('/login.html?redirect=admin');
+        }
+      } catch (e) {
+        window.location.replace('/login.html?redirect=admin');
+      }
+    })();
+  </script>
   <meta name="theme-color" content="#141512">
   <meta name="description" content="Trang Quản Trị Hệ Thống Học Python PySublime - Quản lý tính năng, giáo trình, kết nối Google Drive và học sinh.">
   <title>Bảng Điều Khiển Quản Trị - PySublime Admin</title>

@@ -400,16 +400,21 @@ class AdminStore {
   // === PHIÊN ĐĂNG NHẬP (SESSION MANAGEMENT) ===
   getCurrentUser() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-      if (raw) return JSON.parse(raw);
+      const sessionRaw = sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      if (sessionRaw) return JSON.parse(sessionRaw);
+
+      const localRaw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      if (localRaw) return JSON.parse(localRaw);
     } catch (e) {}
     return null;
   }
 
   setCurrentUser(user) {
     if (!user) {
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     } else {
+      sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
     }
     window.dispatchEvent(new CustomEvent('pysublime_auth_changed', { detail: user }));

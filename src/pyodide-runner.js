@@ -31,28 +31,52 @@ export class PyodideRunner {
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
       });
 
-      // Cấu hình chuẩn stdout/stderr
+      // Cấu hình chuẩn stdout/stderr và input() tương tác qua bridge window của JS
       await this.pyodide.runPythonAsync(`
 import sys
-import io
+import builtins
+from js import window
 
 class WebStdout:
-    def __init__(self, callback):
-        self.callback = callback
     def write(self, s):
         if s:
-            self.callback(s)
+            try:
+                window.__pyodide_stdout_handler(str(s))
+            except Exception:
+                pass
     def flush(self):
         pass
 
 class WebStderr:
-    def __init__(self, callback):
-        self.callback = callback
     def write(self, s):
         if s:
-            self.callback(s)
+            try:
+                window.__pyodide_stderr_handler(str(s))
+            except Exception:
+                pass
     def flush(self):
         pass
+
+def _mobile_input(prompt=''):
+    p_str = str(prompt) if prompt is not None else ''
+    if p_str:
+        try:
+            window.__pyodide_stdout_handler(p_str)
+        except Exception:
+            pass
+    try:
+        val = str(window.__pyodide_input_handler(p_str) or '')
+    except Exception:
+        val = ''
+    try:
+        window.__pyodide_stdout_handler(val + '\\n')
+    except Exception:
+        pass
+    return val
+
+sys.stdout = WebStdout()
+sys.stderr = WebStderr()
+builtins.input = _mobile_input
 `);
 
       this.isReady = true;
@@ -86,7 +110,7 @@ class WebStderr:
 
     let stdoutBuffer = "";
 
-    // Đăng ký callbacks
+    // Đăng ký callbacks trên window để Python gọi trực tiếp
     window.__pyodide_stdout_handler = (text) => {
       stdoutBuffer += text;
       if (onOutput) onOutput(text);
@@ -104,28 +128,7 @@ class WebStderr:
       return window.prompt(promptText || "Nhập giá trị từ bàn phím:") || "";
     };
 
-    const runnerScript = `
-import sys
-import builtins
-
-_custom_out = WebStdout(__pyodide_stdout_handler)
-_custom_err = WebStderr(__pyodide_stderr_handler)
-
-sys.stdout = _custom_out
-sys.stderr = _custom_err
-
-def _mobile_input(prompt=''):
-    if prompt:
-        sys.stdout.write(prompt)
-    val = __pyodide_input_handler(prompt)
-    sys.stdout.write(val + '\\n')
-    return val
-
-builtins.input = _mobile_input
-`;
-
     try {
-      await this.pyodide.runPythonAsync(runnerScript);
       await this.pyodide.runPythonAsync(code);
       return { success: true, output: stdoutBuffer };
     } catch (err) {
@@ -155,25 +158,15 @@ builtins.input = _mobile_input
         testOutput += text;
       };
 
+      window.__pyodide_stderr_handler = (text) => {
+        testOutput += text;
+      };
+
       window.__pyodide_input_handler = () => {
         return inputQueue.shift() || "";
       };
 
-      const runnerScript = `
-import sys
-import builtins
-
-sys.stdout = WebStdout(__pyodide_stdout_handler)
-sys.stderr = WebStderr(__pyodide_stdout_handler)
-
-def _mock_input(prompt=''):
-    return __pyodide_input_handler()
-
-builtins.input = _mock_input
-`;
-
       try {
-        await this.pyodide.runPythonAsync(runnerScript);
         await this.pyodide.runPythonAsync(code);
 
         const actual = testOutput.trim().replace(/\r\n/g, "\n");

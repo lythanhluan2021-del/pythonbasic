@@ -25,9 +25,13 @@ export class SublimeEditor {
     this.editor.session.setMode("ace/mode/python");
 
     // Tùy biến chuẩn Sublime Text & Kích hoạt nhắc lệnh Autocomplete
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 992;
+    const savedFontSize = localStorage.getItem('pysublime_mobile_font_size');
+    const initialFontSize = savedFontSize ? `${savedFontSize}px` : (isMobile ? "16px" : "14px");
+
     this.editor.setOptions({
       fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
-      fontSize: "14px",
+      fontSize: initialFontSize,
       tabSize: 4,
       useSoftTabs: true,
       showPrintMargin: false,
@@ -361,5 +365,34 @@ export class SublimeEditor {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  increaseFontSize() {
+    if (!this.editor) return 16;
+    const current = parseInt(this.editor.getFontSize(), 10) || (window.innerWidth < 992 ? 16 : 14);
+    if (current < 26) {
+      const next = current + 2;
+      this.editor.setFontSize(`${next}px`);
+      localStorage.setItem('pysublime_mobile_font_size', next);
+      return next;
+    }
+    return current;
+  }
+
+  decreaseFontSize() {
+    if (!this.editor) return 16;
+    const current = parseInt(this.editor.getFontSize(), 10) || (window.innerWidth < 992 ? 16 : 14);
+    if (current > 12) {
+      const next = current - 2;
+      this.editor.setFontSize(`${next}px`);
+      localStorage.setItem('pysublime_mobile_font_size', next);
+      return next;
+    }
+    return current;
+  }
+
+  getFontSizeNumber() {
+    if (!this.editor) return 16;
+    return parseInt(this.editor.getFontSize(), 10) || 16;
   }
 }

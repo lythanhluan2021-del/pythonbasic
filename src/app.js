@@ -131,7 +131,40 @@ class PySublimeApp {
       btnToggleTermDirect.addEventListener('click', () => this.toggleTerminalDrawer());
     }
 
-    // === CHUYỂN ĐỔI TAB VIEW TRÊN ĐIỆN THOẠI ===
+    // === CHUYỂN ĐỔI TAB BOTTOM NAVIGATION BAR (CHUẨN MOBILE APP) ===
+    document.querySelectorAll('.bnav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        if (view) {
+          this.switchView(view);
+        } else if (btn.id === 'bnav-btn-profile') {
+          const studentBtn = document.getElementById('student-badge-btn');
+          if (studentBtn) studentBtn.click();
+        }
+      });
+    });
+
+    // === NÚT ĐIỀU KHIỂN BOTTOM DRAWER CONSOLE TRÊN MOBILE ===
+    document.getElementById('btn-drawer-close')?.addEventListener('click', () => this.closeMobileDrawer());
+    document.getElementById('drawer-overlay')?.addEventListener('click', () => this.closeMobileDrawer());
+    document.getElementById('btn-drawer-expand')?.addEventListener('click', () => this.toggleMobileDrawerExpand());
+    document.getElementById('drawer-drag-header')?.addEventListener('click', (e) => {
+      if (!e.target.closest('button')) {
+        this.toggleMobileDrawerExpand();
+      }
+    });
+
+    // === NÚT TĂNG/GIẢM CỠ CHỮ DI ĐỘNG (A- / A+) ===
+    document.getElementById('btn-mobile-font-inc')?.addEventListener('click', () => {
+      const newSize = this.editor.increaseFontSize();
+      this.showToast(`Cỡ chữ: ${newSize}px`);
+    });
+    document.getElementById('btn-mobile-font-dec')?.addEventListener('click', () => {
+      const newSize = this.editor.decreaseFontSize();
+      this.showToast(`Cỡ chữ: ${newSize}px`);
+    });
+
+    // === CHUYỂN ĐỔI TAB VIEW TRÊN ĐIỆN THOẠI (FALLBACK) ===
     const navButtons = document.querySelectorAll('.nav-tab-btn');
     navButtons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -275,14 +308,39 @@ class PySublimeApp {
       btnClearTerm.addEventListener('click', () => {
         const screen = document.getElementById('terminal-screen');
         if (screen) screen.innerHTML = '';
+        const drawerScreen = document.getElementById('drawer-terminal-screen');
+        if (drawerScreen) drawerScreen.innerHTML = '';
       });
     }
+  }
+
+  showToast(msg) {
+    let toast = document.getElementById('app-floating-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'app-floating-toast';
+      toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(20,21,18,0.95);border:1px solid #fd971f;color:#f8f8f2;padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,0.6);z-index:99999;transition:all 0.3s ease;opacity:0;pointer-events:none;';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(-50%) translateY(-10px)';
+    }, 1800);
   }
 
   switchView(view) {
     this.activeView = view;
 
-    // Cập nhật nút nav
+    // Cập nhật Bottom Navigation Bar di động
+    document.querySelectorAll('.bnav-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    // Cập nhật nút nav cũ nếu có
     document.querySelectorAll('.nav-tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === view);
     });
@@ -297,9 +355,52 @@ class PySublimeApp {
       activePanel.classList.add('active');
     }
 
+    if (view === 'terminal') {
+      const badge = document.getElementById('bnav-terminal-badge');
+      if (badge) badge.style.display = 'none';
+      this.closeMobileDrawer();
+    }
+
     // Resize editor nếu chuyển vào IDE
     if (view === 'ide' && this.editor.editor) {
       setTimeout(() => this.editor.editor.resize(), 50);
+    }
+  }
+
+  openMobileDrawer() {
+    const drawer = document.getElementById('mobile-console-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const statusTag = document.getElementById('drawer-status-tag');
+    if (drawer) {
+      drawer.classList.add('open');
+      if (statusTag) statusTag.textContent = 'Đang chạy';
+    }
+    if (overlay) {
+      overlay.classList.add('show');
+    }
+    const badge = document.getElementById('bnav-terminal-badge');
+    if (badge) badge.style.display = 'inline-block';
+  }
+
+  closeMobileDrawer() {
+    const drawer = document.getElementById('mobile-console-drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    if (drawer) {
+      drawer.classList.remove('open', 'expanded');
+    }
+    if (overlay) {
+      overlay.classList.remove('show');
+    }
+  }
+
+  toggleMobileDrawerExpand() {
+    const drawer = document.getElementById('mobile-console-drawer');
+    if (drawer) {
+      drawer.classList.toggle('expanded');
+      const expandBtn = document.getElementById('btn-drawer-expand');
+      if (expandBtn) {
+        expandBtn.textContent = drawer.classList.contains('expanded') ? '⤓' : '⤢';
+      }
     }
   }
 
@@ -339,16 +440,16 @@ class PySublimeApp {
   }
 
   openTerminalDrawer() {
-    const term = document.getElementById('panel-terminal');
-    if (term) {
-      term.classList.remove('collapsed');
-      const toggleBtn = document.getElementById('btn-dock-term-toggle');
-      if (toggleBtn) toggleBtn.textContent = '▼';
-    }
-
-    if (window.innerWidth < 992) {
-      this.switchView('terminal');
+    const isMobile = window.innerWidth < 992;
+    if (isMobile) {
+      this.openMobileDrawer();
     } else {
+      const term = document.getElementById('panel-terminal');
+      if (term) {
+        term.classList.remove('collapsed');
+        const toggleBtn = document.getElementById('btn-dock-term-toggle');
+        if (toggleBtn) toggleBtn.textContent = '▼';
+      }
       if (this.editor && this.editor.editor) {
         setTimeout(() => this.editor.editor.resize(), 80);
       }
@@ -612,11 +713,17 @@ class PySublimeApp {
         onInputPrompt: (promptText) => this.showInputPrompt(promptText)
       });
 
+      const drawerStatus = document.getElementById('drawer-status-tag');
       if (res.success) {
         this.logTerminal(`\n✔ [Kết thúc chương trình: Mã 0 (Thành công)]\n`, 'info');
+        if (drawerStatus) drawerStatus.textContent = 'Xong (Mã 0)';
+      } else {
+        if (drawerStatus) drawerStatus.textContent = 'Có lỗi';
       }
     } catch (e) {
       this.logTerminal(`\n❌ [Lỗi hệ thống]: ${e.message}\n`, 'error');
+      const drawerStatus = document.getElementById('drawer-status-tag');
+      if (drawerStatus) drawerStatus.textContent = 'Lỗi';
     } finally {
       if (runBtn) {
         runBtn.disabled = false;
@@ -638,9 +745,14 @@ class PySublimeApp {
     this.logTerminal(`\n--- [ĐANG CHẤM BÀI TẬP]: ${practice.title} ---\n`, 'info');
 
     const resultsPanel = document.getElementById('test-results-panel');
+    const drawerResults = document.getElementById('drawer-results-box');
     if (resultsPanel) {
       resultsPanel.style.display = 'block';
       resultsPanel.innerHTML = '<div style="color: #e6db74;">⏳ Đang chạy qua các bộ Test Case ẩn...</div>';
+    }
+    if (drawerResults) {
+      drawerResults.style.display = 'block';
+      drawerResults.innerHTML = '<div style="color: #e6db74; padding: 10px;">⏳ Đang chấm điểm qua các bộ Test Case...</div>';
     }
 
     const testResults = await this.runner.runTestCases(code, practice.testCases);
@@ -669,6 +781,13 @@ class PySublimeApp {
 
     if (resultsPanel) {
       resultsPanel.innerHTML = html;
+    }
+    if (drawerResults) {
+      drawerResults.innerHTML = html;
+    }
+    const drawerStatus = document.getElementById('drawer-status-tag');
+    if (drawerStatus) {
+      drawerStatus.textContent = testResults.allPassed ? 'Đạt 100đ' : `${testResults.score}đ`;
     }
 
     // Tự động gửi kết quả lên Google Sheet
@@ -711,13 +830,22 @@ class PySublimeApp {
 
   logTerminal(text, type = 'output') {
     const screen = document.getElementById('terminal-screen');
-    if (!screen) return;
+    if (screen) {
+      const span = document.createElement('span');
+      span.className = `term-line-${type}`;
+      span.textContent = text;
+      screen.appendChild(span);
+      screen.scrollTop = screen.scrollHeight;
+    }
 
-    const span = document.createElement('span');
-    span.className = `term-line-${type}`;
-    span.textContent = text;
-    screen.appendChild(span);
-    screen.scrollTop = screen.scrollHeight;
+    const drawerScreen = document.getElementById('drawer-terminal-screen');
+    if (drawerScreen) {
+      const span2 = document.createElement('span');
+      span2.className = `term-line-${type}`;
+      span2.textContent = text;
+      drawerScreen.appendChild(span2);
+      drawerScreen.scrollTop = drawerScreen.scrollHeight;
+    }
   }
 
   showInputPrompt(promptText) {

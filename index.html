@@ -60,6 +60,12 @@
       <button class="btn-header desktop-only btn-drive" id="btn-open-drive-modal" title="Cấu hình Google Drive" style="display: none;">
         📁 Google Drive
       </button>
+      <!-- Nút chỉnh nhanh cỡ chữ trên di động (A- / A+) -->
+      <div class="mobile-font-size-ctrls" id="mobile-font-size-ctrls">
+        <button class="btn-font-scale" id="btn-mobile-font-dec" title="Giảm cỡ chữ (A-)">A-</button>
+        <button class="btn-font-scale" id="btn-mobile-font-inc" title="Tăng cỡ chữ (A+)">A+</button>
+      </div>
+
       <!-- Khối Tài Khoản Tích Hợp Menu Đăng Xuất Thông Minh -->
       <div class="user-account-wrapper" id="user-account-wrapper">
         <button class="btn-header btn-user-pill" id="student-badge-btn" title="Hồ sơ tài khoản - Bấm để xem thông tin & Đăng xuất" aria-haspopup="true" aria-expanded="false">
@@ -119,22 +125,6 @@
     </div>
   </header>
 
-  <!-- === THANH CHUYỂN TAB TRÊN ĐIỆN THOẠI (SEGMENTED CONTROL) === -->
-  <nav class="mobile-view-nav" aria-label="Điều hướng xem trên di động">
-    <button class="nav-tab-btn" data-view="theory" id="nav-btn-theory">
-      <span class="nav-tab-icon">📖</span>
-      <span class="nav-tab-label">1. Bài Học</span>
-    </button>
-    <button class="nav-tab-btn active" data-view="ide" id="nav-btn-ide">
-      <span class="nav-tab-icon">💻</span>
-      <span class="nav-tab-label">2. Soạn Code</span>
-    </button>
-    <button class="nav-tab-btn" data-view="terminal" id="nav-btn-terminal">
-      <span class="nav-tab-icon">📟</span>
-      <span class="nav-tab-label">3. Kết Quả</span>
-      <span class="badge-count" id="terminal-badge">Python</span>
-    </button>
-  </nav>
 
   <!-- === KHÔNG GIAN LÀM VIỆC CHÍNH === -->
   <main class="workspace-container layout-simple" id="main-workspace">
@@ -218,53 +208,49 @@
           <div id="ace-editor-instance"></div>
         </div>
 
-        <!-- BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI DI ĐỘNG -->
+        <!-- BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI DI ĐỘNG (NATIVE TOUCH TARGETS) -->
         <div class="mobile-virtual-keyboard" id="mobile-virtual-keyboard">
           <!-- Nhóm cú pháp nhanh Python cho di động -->
           <div class="vk-group">
-            <button class="vk-btn highlight action" data-action="autocomplete" title="Bật danh sách gợi ý nhắc lệnh Python">💡 Gợi ý</button>
-            <button class="vk-btn highlight action" data-snippet="print()" title="Hàm in print()">print()</button>
-            <button class="vk-btn highlight action" data-snippet="input()" title="Hàm nhập input()">input()</button>
-            <button class="vk-btn action" data-snippet="if " title="Câu lệnh if">if</button>
-            <button class="vk-btn action" data-snippet="for " title="Vòng lặp for">for</button>
-            <button class="vk-btn action" data-snippet="def " title="Định nghĩa hàm def">def</button>
-            <button class="vk-btn" data-char="#" title="Dấu chú thích #">#</button>
+            <button class="vk-btn vk-btn-colon" data-char=":" title="Dấu hai chấm (quan trọng nhất sau if/for/def)">:</button>
+            <button class="vk-btn vk-btn-indent" data-action="tab" title="Phím Tab thụt lề">Tab</button>
+            <button class="vk-btn vk-btn-indent" data-action="indent" title="Thụt dòng vào (Indent)">⇥</button>
+            <button class="vk-btn vk-btn-indent" data-action="outdent" title="Lùi dòng ra (Outdent)">⇤</button>
+            <button class="vk-btn vk-btn-func" data-snippet="print()" title="Hàm in print()">print()</button>
+            <button class="vk-btn vk-btn-func" data-snippet="input()" title="Hàm nhập input()">input()</button>
+            <button class="vk-btn vk-btn-kw" data-snippet="if " title="Câu lệnh if">if</button>
+            <button class="vk-btn vk-btn-kw" data-snippet="for " title="Vòng lặp for">for</button>
+            <button class="vk-btn vk-btn-kw" data-snippet="def " title="Định nghĩa hàm def">def</button>
+            <button class="vk-btn vk-btn-comment" data-char="#" title="Dấu chú thích #">#</button>
           </div>
 
-          <!-- Nhóm thụt dòng (Indentation) -->
+          <!-- Nhóm cặp ngoặc tự lồng con trỏ -->
           <div class="vk-group">
-            <button class="vk-btn highlight action" data-action="tab" title="Phím Tab (4 space)">Tab</button>
-            <button class="vk-btn highlight" data-action="indent" title="Thụt dòng vào (Indent)">⇥</button>
-            <button class="vk-btn highlight" data-action="outdent" title="Lùi dòng ra (Outdent)">⇤</button>
+            <button class="vk-btn vk-btn-pair" data-char="()" title="Cặp ngoặc tròn ( )">( )</button>
+            <button class="vk-btn vk-btn-pair" data-char='""' title="Cặp ngoặc kép chuỗi &quot; &quot;">" "</button>
+            <button class="vk-btn vk-btn-pair" data-char="''" title="Cặp ngoặc đơn ' '">&#39; &#39;</button>
+            <button class="vk-btn vk-btn-pair" data-char="[]" title="Cặp ngoặc vuông [ ]">[ ]</button>
+            <button class="vk-btn vk-btn-pair" data-char="{}" title="Cặp ngoặc nhọn { }">{ }</button>
           </div>
 
-          <!-- Nhóm ký tự đặc biệt hay dùng trong Python -->
+          <!-- Nhóm toán tử số học & gán -->
           <div class="vk-group">
-            <button class="vk-btn highlight" data-char=":" title="Dấu hai chấm (sau if/for/def)">:</button>
-            <button class="vk-btn" data-char="()" title="Cặp ngoặc tròn ( )">( )</button>
-            <button class="vk-btn" data-char="[]" title="Cặp ngoặc vuông [ ]">[ ]</button>
-            <button class="vk-btn" data-char="{}" title="Cặp ngoặc nhọn { }">{ }</button>
-            <button class="vk-btn" data-char='""' title="Ngoặc kép chuỗi &quot; &quot;">" "</button>
-            <button class="vk-btn" data-char="''" title="Ngoặc đơn ' '">&#39; &#39;</button>
-            <button class="vk-btn" data-char="=" title="Dấu gán =">=</button>
-            <button class="vk-btn" data-char="_" title="Gạch dưới _">_</button>
-          </div>
-
-          <!-- Nhóm toán tử số học -->
-          <div class="vk-group">
-            <button class="vk-btn" data-char="+" title="Cộng">+</button>
-            <button class="vk-btn" data-char="-" title="Trừ">-</button>
-            <button class="vk-btn" data-char="*" title="Nhân">*</button>
-            <button class="vk-btn" data-char="/" title="Chia">/</button>
-            <button class="vk-btn" data-char="%" title="Chia lấy dư %">%</button>
+            <button class="vk-btn vk-btn-op" data-char="=" title="Dấu gán =">=</button>
+            <button class="vk-btn vk-btn-op" data-char="+" title="Cộng">+</button>
+            <button class="vk-btn vk-btn-op" data-char="-" title="Trừ">-</button>
+            <button class="vk-btn vk-btn-op" data-char="*" title="Nhân">*</button>
+            <button class="vk-btn vk-btn-op" data-char="/" title="Chia">/</button>
+            <button class="vk-btn vk-btn-op" data-char="%" title="Chia lấy dư %">%</button>
+            <button class="vk-btn vk-btn-op" data-char="_" title="Gạch dưới _">_</button>
           </div>
 
           <!-- Nhóm điều hướng con trỏ & Thao tác nhanh -->
           <div class="vk-group">
-            <button class="vk-btn nav" data-action="nav-left" title="Sang trái 1 ký tự">◀</button>
-            <button class="vk-btn nav" data-action="nav-right" title="Sang phải 1 ký tự">▶</button>
-            <button class="vk-btn action" data-action="undo" title="Hoàn tác">↩</button>
-            <button class="vk-btn action" data-action="clear" title="Xóa hết code">🧹</button>
+            <button class="vk-btn vk-btn-nav" data-action="nav-left" title="Sang trái 1 ký tự">◀</button>
+            <button class="vk-btn vk-btn-nav" data-action="nav-right" title="Sang phải 1 ký tự">▶</button>
+            <button class="vk-btn vk-btn-action" data-action="autocomplete" title="Bật danh sách gợi ý nhắc lệnh Python">💡 Gợi ý</button>
+            <button class="vk-btn vk-btn-action" data-action="undo" title="Hoàn tác">↩</button>
+            <button class="vk-btn vk-btn-danger" data-action="clear" title="Xóa hết code">🧹</button>
           </div>
         </div>
 
@@ -317,6 +303,55 @@
     </div>
 
   </main>
+
+  <!-- === KHUNG TRƯỢT KẾT QUẢ THÔNG MINH TRÊN ĐIỆN THOẠI (BOTTOM DRAWER) === -->
+  <div class="mobile-console-drawer" id="mobile-console-drawer" role="region" aria-label="Kết quả chạy code">
+    <div class="drawer-drag-header" id="drawer-drag-header">
+      <div class="drawer-handle-bar"></div>
+      <div class="drawer-header-row">
+        <div class="drawer-title-group">
+          <span class="drawer-icon">📟</span>
+          <span class="drawer-title-text">Python Console</span>
+          <span class="drawer-status-tag" id="drawer-status-tag">Sẵn sàng</span>
+        </div>
+        <div class="drawer-controls">
+          <button class="btn-drawer-ctrl" id="btn-drawer-expand" title="Phóng to / Thu nhỏ">⤢</button>
+          <button class="btn-drawer-ctrl btn-drawer-close" id="btn-drawer-close" title="Thu gọn kết quả">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-scroll-body" id="drawer-scroll-body">
+      <div class="drawer-screen" id="drawer-terminal-screen">
+        <span class="term-line-info">=== Python Console Kết Quả ===</span>
+        <span class="term-line-info">Bấm [▶ Chạy Code] hoặc [📝 Chấm Điểm] để xem kết quả tại đây.</span>
+      </div>
+      <div class="drawer-results-box" id="drawer-results-box" style="display: none;">
+        <!-- Đồng bộ kết quả test case -->
+      </div>
+    </div>
+  </div>
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+
+  <!-- === THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH CHUẨN NATIVE APP (BOTTOM NAVIGATION BAR) === -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Thanh điều hướng đáy màn hình">
+    <button class="bnav-tab-btn" data-view="theory" id="bnav-btn-theory">
+      <span class="bnav-icon">📖</span>
+      <span class="bnav-label">Bài Học</span>
+    </button>
+    <button class="bnav-tab-btn active" data-view="ide" id="bnav-btn-ide">
+      <span class="bnav-icon">💻</span>
+      <span class="bnav-label">Viết Code</span>
+    </button>
+    <button class="bnav-tab-btn" data-view="terminal" id="bnav-btn-terminal">
+      <span class="bnav-icon">📟</span>
+      <span class="bnav-label">Kết Quả</span>
+      <span class="bnav-badge" id="bnav-terminal-badge" style="display: none;">●</span>
+    </button>
+    <button class="bnav-tab-btn" id="bnav-btn-profile">
+      <span class="bnav-icon">👤</span>
+      <span class="bnav-label">Tài Khoản</span>
+    </button>
+  </nav>
 
   <!-- === MODAL CẤU HÌNH KẾT NỐI GOOGLE DRIVE CMS === -->
   <div class="modal-overlay" id="modal-google-drive">

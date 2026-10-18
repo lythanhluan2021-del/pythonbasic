@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#141512">
+  <meta name="description" content="Đăng nhập PySublime - Học lập trình Python cơ bản với tài khoản học sinh nhà trường hoặc tài khoản Google.">
+  <title>Đăng Nhập - PySublime Learning</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #141512;
+      --card-bg: rgba(30, 31, 28, 0.95);
+      --border: #33332b;
+      --accent-orange: #fd971f;
+      --accent-green: #a6e22e;
+      --accent-cyan: #66d9ef;
+      --accent-pink: #f92672;
+      --text-main: #f8f8f2;
+      --text-muted: #8c8979;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Background glow effect */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(253, 151, 31, 0.12) 0%, transparent 70%);
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      animation: popIn 0.3s ease-out;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .login-header {
+      padding: 32px 32px 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-logo {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, var(--accent-orange), var(--accent-pink));
+      color: #fff;
+      font-weight: 800;
+      font-size: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(253, 151, 31, 0.4);
+      margin-bottom: 12px;
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Auth Switch Tabs */
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 14px 10px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .auth-tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .auth-tab-btn.active {
+      color: var(--accent-orange);
+      border-bottom-color: var(--accent-orange);
+      background: rgba(253, 151, 31, 0.06);
+    }
+
+    .login-body {
+      padding: 28px 32px 32px;
+    }
+
+    .auth-panel {
+      display: none;
+    }
+
+    .auth-panel.active {
+      display: block;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Form Inputs */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #141512;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-orange);
+      box-shadow: 0 0 0 3px rgba(253, 151, 31, 0.15);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent-orange);
+      color: #141512;
+      border: none;
+      border-radius: 8px;
+      font-size: 14.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: #ffaa40;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(253, 151, 31, 0.4);
+    }
+
+    /* Google Button */
+    .btn-google {
+      width: 100%;
+      padding: 12px 16px;
+      background: #ffffff;
+      color: #1f1f1f;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .btn-google:hover {
+      background: #f8f9fa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transform: translateY(-1px);
+    }
+
+    .google-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    .notice-box {
+      margin-top: 18px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .notice-box strong {
+      color: var(--accent-green);
+    }
+
+    .login-footer {
+      padding: 16px 32px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+    }
+
+    .link-sub {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .link-sub:hover {
+      text-decoration: underline;
+    }
+
+    .error-msg {
+      padding: 10px 14px;
+      background: rgba(249, 38, 114, 0.15);
+      border: 1px solid rgba(249, 38, 114, 0.4);
+      color: var(--accent-pink);
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Modal for Quick Google Login simulation */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal-card {
+      background: #1e1f1c;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-header">
+      <div class="brand-logo">S</div>
+      <h1 class="brand-title">PySublime Login</h1>
+      <p class="brand-sub">Hệ Thống Học &amp; Thực Hành Python Trực Tuyến</p>
+    </div>
+
+    <!-- Thanh chuyển tab phương thức đăng nhập -->
+    <div class="auth-tabs">
+      <button class="auth-tab-btn active" id="tab-btn-school" data-target="panel-school">
+        <span>🎓</span> Học Sinh Trường
+      </button>
+      <button class="auth-tab-btn" id="tab-btn-google" data-target="panel-google">
+        <span>🌐</span> Tài Khoản Google
+      </button>
+    </div>
+
+    <div class="login-body">
+      <!-- Thông báo lỗi nếu có -->
+      <div class="error-msg" id="login-error-msg"></div>
+
+      <!-- ==============================================
+           PHƯƠNG THỨC 1: HỌC SINH NHÀ TRƯỜNG
+           ============================================== -->
+      <div class="auth-panel active" id="panel-school">
+        <form id="form-school-login">
+          <div class="form-group">
+            <label class="form-label" for="input-school-username">Mã Học Sinh / Tên Đăng Nhập:</label>
+            <input type="text" id="input-school-username" class="form-input" placeholder="Ví dụ: HS10A1_01" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="input-school-password">Mật Khẩu:</label>
+            <input type="password" id="input-school-password" class="form-input" placeholder="Nhập mật khẩu do giáo viên cấp" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="btn-submit" id="btn-submit-school">
+            <span>🔑 Đăng Nhập Học Sinh</span>
+          </button>
+        </form>
+
+        <div class="notice-box">
+          💡 <strong>Tài khoản mẫu để thử nghiệm:</strong><br>
+          • Tên đăng nhập: <code>HS10A1_01</code> (hoặc <code>HS10A1_02</code>)<br>
+          • Mật khẩu: <code>123</code><br>
+          <em>(Thầy/cô có thể tạo và đổi mật khẩu trong mục Quản Lý Tài Khoản ở trang Admin).</em>
+        </div>
+      </div>
+
+      <!-- ==============================================
+           PHƯƠNG THỨC 2: NGƯỜI DÙNG GOOGLE
+           ============================================== -->
+      <div class="auth-panel" id="panel-google">
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; text-align: center;">
+          Dành cho học sinh tự học hoặc người dùng ngoài trường. Đăng nhập nhanh để lưu tiến độ và bài làm của bạn.
+        </p>
+
+        <button type="button" class="btn-google" id="btn-google-signin">
+          <svg class="google-icon" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Tiếp tục với tài khoản Google</span>
+        </button>
+
+        <div class="notice-box" style="margin-top: 24px;">
+          🌐 <strong>Lưu ý:</strong> Tài khoản Google được tách riêng biệt với học sinh của trường. Admin có thể xem danh sách và quản lý quyền truy cập trong Dashboard Admin.
+        </div>
+      </div>
+    </div>
+
+    <div class="login-footer">
+      <a href="/" class="link-sub">← Vào học chế độ Khách (Guest)</a>
+      <a href="/admin" class="link-sub">⚙️ Quản Trị Viên</a>
+    </div>
+  </div>
+
+  <!-- Modal đăng nhập Google nhanh (Demo/One-click) -->
+  <div class="modal-overlay" id="modal-google-auth">
+    <div class="modal-card">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <span style="font-size: 22px;">🌐</span>
+        <h3 style="font-size: 16px; color: var(--accent-orange);">Đăng Nhập Tài Khoản Google</h3>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Nhập thông tin Google của bạn để liên kết phiên học tập:
+      </p>
+      <div class="form-group">
+        <label class="form-label" for="input-google-name">Họ Và Tên:</label>
+        <input type="text" id="input-google-name" class="form-input" placeholder="Ví dụ: Lê Minh Khang" value="Lê Minh Khang">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="input-google-email">Email Google:</label>
+        <input type="email" id="input-google-email" class="form-input" placeholder="tenban@gmail.com" value="minhkhang.python@gmail.com">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+        <button type="button" class="btn-submit" id="btn-cancel-google" style="background: rgba(255,255,255,0.08); color: #fff; width: auto; padding: 8px 16px;">Hủy</button>
+        <button type="button" class="btn-submit" id="btn-confirm-google" style="width: auto; padding: 8px 20px;">Đăng Nhập Ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/login.js"></script>
+</body>
+</html>

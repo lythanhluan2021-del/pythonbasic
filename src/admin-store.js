@@ -12,7 +12,10 @@ export const STORAGE_KEYS = {
   STUDENT_PROFILE: 'pysublime_student_profile',
   COMPLETED_LESSONS: 'pysublime_completed_lessons',
   SUBMITTED_EXERCISES: 'pysublime_submitted_exercises',
-  SUBMISSION_LOGS: 'pysublime_submission_logs'
+  SUBMISSION_LOGS: 'pysublime_submission_logs',
+  SCHOOL_STUDENTS: 'pysublime_school_students',
+  GOOGLE_USERS: 'pysublime_google_users',
+  CURRENT_USER: 'pysublime_current_user'
 };
 
 export const DEFAULT_SETTINGS = {
@@ -171,6 +174,278 @@ class AdminStore {
     localStorage.removeItem(STORAGE_KEYS.COMPLETED_LESSONS);
   }
 
+  // === QUẢN LÝ TÀI KHOẢN HỌC SINH TRƯỜNG (SCHOOL STUDENTS) ===
+  getSchoolStudents() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SCHOOL_STUDENTS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+
+    // Dữ liệu mẫu ban đầu cho lớp 10A1
+    const defaultStudents = [
+      { username: 'HS10A1_01', fullName: 'Nguyễn Văn An', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
+      { username: 'HS10A1_02', fullName: 'Trần Thị Bình', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
+      { username: 'HS10A1_03', fullName: 'Lê Hoàng Cường', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
+      { username: 'HS10A1_04', fullName: 'Phạm Minh Đức', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
+      { username: 'HS10A1_05', fullName: 'Đặng Ngọc Hoa', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null }
+    ];
+    this.saveSchoolStudents(defaultStudents);
+    return defaultStudents;
+  }
+
+  saveSchoolStudents(students) {
+    localStorage.setItem(STORAGE_KEYS.SCHOOL_STUDENTS, JSON.stringify(students));
+    window.dispatchEvent(new CustomEvent('pysublime_users_changed', { detail: { type: 'school', count: students.length } }));
+  }
+
+  addSchoolStudent(student) {
+    const list = this.getSchoolStudents();
+    const username = student.username.trim().toUpperCase();
+    if (list.some(s => s.username.toUpperCase() === username)) {
+      throw new Error(`Tên đăng nhập "${username}" đã tồn tại trên hệ thống!`);
+    }
+
+    const newStudent = {
+      username: username,
+      fullName: student.fullName.trim(),
+      className: student.className.trim(),
+      password: student.password || '123',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      lastLogin: null
+    };
+
+    list.unshift(newStudent);
+    this.saveSchoolStudents(list);
+    return newStudent;
+  }
+
+  updateSchoolStudent(username, updatedData) {
+    const list = this.getSchoolStudents();
+    const idx = list.findIndex(s => s.username.toUpperCase() === username.toUpperCase());
+    if (idx === -1) throw new Error("Không tìm thấy học sinh: " + username);
+
+    list[idx] = { ...list[idx], ...updatedData };
+    this.saveSchoolStudents(list);
+    return list[idx];
+  }
+
+  deleteSchoolStudent(username) {
+    let list = this.getSchoolStudents();
+    list = list.filter(s => s.username.toUpperCase() !== username.toUpperCase());
+    this.saveSchoolStudents(list);
+  }
+
+  bulkGenerateStudents({ prefix = 'HS', className = '10A1', count = 10, defaultPassword = '123', passwordPattern = 'fixed' }) {
+    const list = this.getSchoolStudents();
+    const cleanClass = className.trim().replace(/\s+/g, '');
+    const cleanPrefix = prefix.trim().toUpperCase();
+    const generated = [];
+
+    for (let i = 1; i <= count; i++) {
+      const stt = i < 10 ? `0${i}` : `${i}`;
+      const username = `${cleanPrefix}${cleanClass}_${stt}`;
+      
+      let pass = defaultPassword || '123';
+      if (passwordPattern === 'user') {
+        pass = `${username}@123`;
+      }
+
+      const existingIdx = list.findIndex(s => s.username.toUpperCase() === username);
+      if (existingIdx !== -1) {
+        list[existingIdx].password = pass;
+        list[existingIdx].className = className;
+      } else {
+        const studentObj = {
+          username: username,
+          fullName: `Học sinh ${stt} (${className})`,
+          className: className,
+          password: pass,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          lastLogin: null
+        };
+        list.push(studentObj);
+        generated.push(studentObj);
+      }
+    }
+
+    this.saveSchoolStudents(list);
+    return { totalCreated: generated.length, totalList: list.length };
+  }
+
+  bulkResetPassword(usernames, newPassword = '123') {
+    const list = this.getSchoolStudents();
+    let count = 0;
+    const targetSet = new Set(usernames.map(u => u.toUpperCase()));
+
+    list.forEach(s => {
+      if (targetSet.has(s.username.toUpperCase())) {
+        s.password = newPassword;
+        count++;
+      }
+    });
+
+    this.saveSchoolStudents(list);
+    return count;
+  }
+
+  importStudentsFromList(rows) {
+    const list = this.getSchoolStudents();
+    let added = 0;
+
+    rows.forEach(r => {
+      if (!r.username || !r.fullName) return;
+      const u = r.username.trim().toUpperCase();
+      const existingIdx = list.findIndex(s => s.username.toUpperCase() === u);
+      if (existingIdx !== -1) {
+        list[existingIdx] = { ...list[existingIdx], ...r, username: u };
+      } else {
+        list.push({
+          username: u,
+          fullName: r.fullName.trim(),
+          className: r.className || 'Tự do',
+          password: r.password || '123',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          lastLogin: null
+        });
+        added++;
+      }
+    });
+
+    this.saveSchoolStudents(list);
+    return added;
+  }
+
+  // === QUẢN LÝ TÀI KHOẢN GOOGLE (GOOGLE USERS) ===
+  getGoogleUsers() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.GOOGLE_USERS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  saveGoogleUsers(users) {
+    localStorage.setItem(STORAGE_KEYS.GOOGLE_USERS, JSON.stringify(users));
+    window.dispatchEvent(new CustomEvent('pysublime_users_changed', { detail: { type: 'google', count: users.length } }));
+  }
+
+  addOrUpdateGoogleUser(profile) {
+    const list = this.getGoogleUsers();
+    const email = profile.email.toLowerCase().trim();
+    const idx = list.findIndex(u => u.email.toLowerCase() === email);
+
+    const userObj = {
+      email: email,
+      fullName: profile.fullName || profile.name || 'Người dùng Google',
+      googleId: profile.googleId || profile.sub || 'G-' + Date.now(),
+      avatar: profile.avatar || profile.picture || '',
+      status: 'active',
+      lastLogin: new Date().toISOString()
+    };
+
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...userObj };
+    } else {
+      userObj.createdAt = new Date().toISOString();
+      list.unshift(userObj);
+    }
+
+    this.saveGoogleUsers(list);
+    return userObj;
+  }
+
+  deleteGoogleUser(email) {
+    let list = this.getGoogleUsers();
+    list = list.filter(u => u.email.toLowerCase() !== email.toLowerCase());
+    this.saveGoogleUsers(list);
+  }
+
+  toggleUserStatus(userType, identifier) {
+    if (userType === 'school') {
+      const list = this.getSchoolStudents();
+      const s = list.find(item => item.username.toUpperCase() === identifier.toUpperCase());
+      if (s) {
+        s.status = s.status === 'locked' ? 'active' : 'locked';
+        this.saveSchoolStudents(list);
+        return s.status;
+      }
+    } else {
+      const list = this.getGoogleUsers();
+      const u = list.find(item => item.email.toLowerCase() === identifier.toLowerCase());
+      if (u) {
+        u.status = u.status === 'locked' ? 'active' : 'locked';
+        this.saveGoogleUsers(list);
+        return u.status;
+      }
+    }
+    return null;
+  }
+
+  // === PHIÊN ĐĂNG NHẬP (SESSION MANAGEMENT) ===
+  getCurrentUser() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+  }
+
+  setCurrentUser(user) {
+    if (!user) {
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    } else {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+    }
+    window.dispatchEvent(new CustomEvent('pysublime_auth_changed', { detail: user }));
+  }
+
+  logoutCurrentUser() {
+    this.setCurrentUser(null);
+  }
+
+  verifyStudentLogin(username, password) {
+    const list = this.getSchoolStudents();
+    const u = username.trim().toUpperCase();
+    const student = list.find(s => s.username.toUpperCase() === u);
+
+    if (!student) {
+      throw new Error(`Không tìm thấy tài khoản học sinh "${username}". Vui lòng kiểm tra lại!`);
+    }
+
+    if (student.status === 'locked') {
+      throw new Error(`Tài khoản "${username}" hiện đang bị tạm khóa. Vui lòng liên hệ giáo viên!`);
+    }
+
+    if (student.password !== password) {
+      throw new Error(`Mật khẩu không chính xác!`);
+    }
+
+    // Cập nhật lastLogin
+    student.lastLogin = new Date().toISOString();
+    this.saveSchoolStudents(list);
+
+    const sessionUser = {
+      type: 'school',
+      username: student.username,
+      fullName: student.fullName,
+      className: student.className,
+      avatar: '',
+      loginAt: new Date().toISOString()
+    };
+
+    this.setCurrentUser(sessionUser);
+    return sessionUser;
+  }
+
   // === THỐNG KÊ TỔNG QUAN (ANALYTICS) ===
   getAnalytics() {
     const curriculum = this.getCurriculum();
@@ -193,12 +468,17 @@ class AdminStore {
     const driveUrl = localStorage.getItem(STORAGE_KEYS.DRIVE_API_URL) || '';
     const isDriveConnected = Boolean(driveUrl && driveUrl.startsWith('https://script.google.com'));
 
+    const schoolStudents = this.getSchoolStudents();
+    const googleUsers = this.getGoogleUsers();
+
     return {
       totalModules,
       totalLessons,
       totalExercises,
       totalSubmissions: logs.length,
       uniqueStudents: Math.max(uniqueStudents, logs.length > 0 ? 1 : 0),
+      totalSchoolStudents: schoolStudents.length,
+      totalGoogleUsers: googleUsers.length,
       passRate,
       isDriveConnected,
       driveUrl

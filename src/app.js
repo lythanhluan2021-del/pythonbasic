@@ -147,10 +147,38 @@ class PySublimeApp {
       btnDriveModal.addEventListener('click', () => this.openDriveModal());
     }
 
-    // === NÚT TÀI KHOẢN HỌC SINH ===
+    // === NÚT TÀI KHOẢN HỌC SINH / BADGE ===
+    const btnStudentBadge = document.getElementById('student-badge-btn');
+    if (btnStudentBadge) {
+      btnStudentBadge.addEventListener('click', () => {
+        const currentUser = adminStore.getCurrentUser();
+        if (!currentUser) {
+          window.location.href = '/login.html';
+        } else {
+          this.openStudentModal();
+        }
+      });
+    }
+
     const btnStudentModal = document.getElementById('btn-open-student-modal');
     if (btnStudentModal) {
       btnStudentModal.addEventListener('click', () => this.openStudentModal());
+    }
+
+    // === NÚT AUTH ACTION (ĐĂNG NHẬP / ĐĂNG XUẤT) ===
+    const btnAuthAction = document.getElementById('btn-auth-action');
+    if (btnAuthAction) {
+      btnAuthAction.addEventListener('click', () => {
+        const currentUser = adminStore.getCurrentUser();
+        if (currentUser) {
+          if (confirm(`Bạn có muốn đăng xuất tài khoản "${currentUser.fullName}" không?`)) {
+            adminStore.logoutCurrentUser();
+            window.location.href = '/login.html';
+          }
+        } else {
+          window.location.href = '/login.html';
+        }
+      });
     }
 
     // === MODAL EVENTS ===
@@ -562,10 +590,21 @@ class PySublimeApp {
   openStudentModal() {
     const modal = document.getElementById('modal-student-profile');
     if (modal) {
-      const p = this.driveSync.student;
-      document.getElementById('input-student-id').value = p.studentId;
-      document.getElementById('input-student-name').value = p.fullName;
-      document.getElementById('input-student-class').value = p.className;
+      const user = adminStore.getCurrentUser();
+      const p = user ? {
+        studentId: user.username || user.email,
+        fullName: user.fullName,
+        className: user.className || (user.type === 'google' ? 'Google Account' : '')
+      } : this.driveSync.student;
+
+      const inputId = document.getElementById('input-student-id');
+      const inputName = document.getElementById('input-student-name');
+      const inputClass = document.getElementById('input-student-class');
+
+      if (inputId) inputId.value = p.studentId || '';
+      if (inputName) inputName.value = p.fullName || '';
+      if (inputClass) inputClass.value = p.className || '';
+
       modal.classList.add('show');
     }
   }
@@ -661,8 +700,42 @@ class PySublimeApp {
 
   updateStudentBadgeUI() {
     const badge = document.getElementById('student-badge-btn');
-    if (!badge) return;
-    badge.textContent = `👤 ${this.driveSync.student.fullName} (${this.driveSync.student.studentId})`;
+    const authBtn = document.getElementById('btn-auth-action');
+    const currentUser = adminStore.getCurrentUser();
+
+    if (currentUser) {
+      this.driveSync.student = {
+        studentId: currentUser.username || currentUser.email,
+        fullName: currentUser.fullName,
+        className: currentUser.className || (currentUser.type === 'google' ? 'Google Account' : '')
+      };
+
+      if (badge) {
+        if (currentUser.type === 'school') {
+          badge.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong> <span style="font-size:11px; opacity:0.8;">(${this.escapeHtml(currentUser.className || currentUser.username)})</span>`;
+          badge.title = `Học sinh trường: ${currentUser.fullName} (${currentUser.username}) - Bấm để xem thông tin`;
+        } else {
+          badge.innerHTML = `🌐 <strong>${this.escapeHtml(currentUser.fullName)}</strong> <span style="font-size:11px; opacity:0.8;">(Google)</span>`;
+          badge.title = `Tài khoản Google: ${currentUser.email}`;
+        }
+      }
+
+      if (authBtn) {
+        authBtn.innerHTML = '🚪 Đăng Xuất';
+        authBtn.classList.add('logged-in');
+        authBtn.title = `Đang đăng nhập: ${currentUser.fullName}. Bấm để đăng xuất`;
+      }
+    } else {
+      if (badge) {
+        badge.innerHTML = `👤 Khách (Tự do)`;
+        badge.title = 'Bạn đang học ở chế độ Khách. Bấm để đăng nhập';
+      }
+      if (authBtn) {
+        authBtn.innerHTML = '🔑 Đăng Nhập';
+        authBtn.classList.remove('logged-in');
+        authBtn.title = 'Đăng nhập với tài khoản trường hoặc tài khoản Google';
+      }
+    }
   }
 
   escapeHtml(str) {

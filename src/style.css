@@ -137,6 +137,27 @@ body {
   background: rgba(166, 226, 46, 0.1);
 }
 
+.btn-auth-action {
+  font-weight: 700;
+  border-color: var(--monokai-orange);
+  color: var(--monokai-orange);
+  background: rgba(253, 151, 31, 0.12);
+}
+
+.btn-auth-action:hover {
+  background: rgba(253, 151, 31, 0.22);
+}
+
+.btn-auth-action.logged-in {
+  color: var(--monokai-pink);
+  border-color: rgba(249, 38, 114, 0.4);
+  background: rgba(249, 38, 114, 0.1);
+}
+
+.btn-auth-action.logged-in:hover {
+  background: rgba(249, 38, 114, 0.2);
+}
+
 /* === MOBILE VIEW SWITCHER TABS === */
 .mobile-view-nav {
   display: flex;

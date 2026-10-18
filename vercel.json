@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/admin.html", "destination": "/admin.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/login.html", "destination": "/login.html" },
     { "source": "/((?!assets/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }

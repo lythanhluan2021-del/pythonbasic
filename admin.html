@@ -47,10 +47,14 @@
         <span>Google Drive CMS</span>
       </a>
 
-      <div class="menu-category">Học Tập & Học Sinh</div>
+      <div class="menu-category">Học Tập & Người Dùng</div>
+      <a class="menu-item" data-target="panel-users" id="menu-btn-users">
+        <span class="menu-icon">👥</span>
+        <span>Quản Lý Tài Khoản</span>
+      </a>
       <a class="menu-item" data-target="panel-students" id="menu-btn-students">
         <span class="menu-icon">🎓</span>
-        <span>Học Sinh & Điểm Số</span>
+        <span>Sổ Điểm & Bài Nộp</span>
       </a>
     </nav>
 
@@ -428,7 +432,116 @@
       </section>
 
       <!-- ========================================================
-           PANEL 5: HỌC SINH & BẢNG ĐIỂM (STUDENTS & GRADES)
+           PANEL 5: QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG (USERS MANAGEMENT)
+           ======================================================== -->
+      <section class="admin-panel" id="panel-users">
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">👥</span>
+              <div>
+                <h2 class="card-title">Quản Lý Tài Khoản Người Dùng</h2>
+                <p class="card-subtitle">Tách biệt quản lý giữa học sinh nhà trường và người dùng đăng nhập bằng Google</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-admin-secondary" id="btn-sync-students-drive" title="Đồng bộ danh sách học sinh lên Google Sheet">
+                <span>☁️ Lưu Lên Google Sheet</span>
+              </button>
+              <button class="btn-admin-secondary" id="btn-import-students-file" title="Tải file danh sách học sinh (.csv, .json)">
+                <span>📥 Nhập Từ File</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Thanh chuyển tab giữa Học sinh trường và Google -->
+          <div class="auth-subtabs-nav">
+            <button class="auth-subtab-btn active" id="btn-subtab-school" data-target="subpanel-school-users">
+              <span>🎓</span> Học Sinh Nhà Trường
+              <span class="badge-pill" id="badge-count-school-users">0</span>
+            </button>
+            <button class="auth-subtab-btn" id="btn-subtab-google" data-target="subpanel-google-users">
+              <span>🌐</span> Tài Khoản Google (Ngoài Trường)
+              <span class="badge-pill" id="badge-count-google-users">0</span>
+            </button>
+          </div>
+
+          <!-- SUB-PANEL 1: HỌC SINH NHÀ TRƯỜNG -->
+          <div class="subpanel-user" id="subpanel-school-users" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; gap: 10px; flex: 1; max-width: 520px;">
+                <input type="text" id="search-school-user" class="admin-input" placeholder="🔍 Tìm theo Mã HS hoặc Họ tên..." style="flex: 1;">
+                <select id="filter-school-class" class="admin-select" style="width: 140px;">
+                  <option value="all">Tất cả lớp</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-admin-secondary" id="btn-open-bulk-reset-modal" title="Đặt lại mật khẩu hàng loạt cho học sinh">
+                  <span>🔑 Reset Mật Khẩu</span>
+                </button>
+                <button class="btn-admin-secondary" id="btn-open-bulk-modal" title="Tạo tài khoản hàng loạt theo cú pháp">
+                  <span>⚡ Tạo Hàng Loạt</span>
+                </button>
+                <button class="btn-admin-primary" id="btn-open-add-student-modal">
+                  <span>➕ Thêm Học Sinh</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table" id="table-school-users">
+                <thead>
+                  <tr>
+                    <th>Mã Học Sinh / Tên Đăng Nhập</th>
+                    <th>Họ Và Tên</th>
+                    <th>Lớp</th>
+                    <th>Mật Khẩu</th>
+                    <th>Trạng Thái</th>
+                    <th>Lần Đăng Nhập Cuối</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-school-users">
+                  <!-- Render động -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SUB-PANEL 2: NGƯỜI DÙNG GOOGLE -->
+          <div class="subpanel-user" id="subpanel-google-users" style="display: none; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;">
+              <input type="text" id="search-google-user" class="admin-input" placeholder="🔍 Tìm theo Email hoặc Tên người dùng Google..." style="max-width: 420px; width: 100%;">
+              <button class="btn-admin-secondary" id="btn-sync-google-sheet">
+                <span>🔄 Tải Danh Sách Từ Google Sheet</span>
+              </button>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table" id="table-google-users">
+                <thead>
+                  <tr>
+                    <th>Người Dùng Google</th>
+                    <th>Email Google</th>
+                    <th>Google ID</th>
+                    <th>Trạng Thái</th>
+                    <th>Lần Hoạt Động Cuối</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-google-users">
+                  <!-- Render động -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PANEL 6: HỌC SINH & BẢNG ĐIỂM (STUDENTS & GRADES)
            ======================================================== -->
       <section class="admin-panel" id="panel-students">
         <div class="card-section">
@@ -579,8 +692,124 @@
     </div>
   </div>
 
-  <!-- Hidden file input for importing JSON -->
+  <!-- === MODAL THÊM / SỬA HỌC SINH THỦ CÔNG === -->
+  <div class="admin-modal-overlay" id="modal-user-single">
+    <div class="admin-modal" style="max-width: 520px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="user-single-modal-title">➕ Thêm Học Sinh Mới</h3>
+        <button class="btn-icon-action" id="btn-close-user-single-modal" style="border: none;">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <input type="hidden" id="form-user-edit-mode" value="add">
+        <div class="form-field">
+          <label for="form-user-username">Mã Học Sinh / Tên Đăng Nhập:</label>
+          <input type="text" id="form-user-username" class="admin-input" placeholder="Ví dụ: HS10A1_15">
+        </div>
+        <div class="form-field">
+          <label for="form-user-fullname">Họ Và Tên Học Sinh:</label>
+          <input type="text" id="form-user-fullname" class="admin-input" placeholder="Ví dụ: Lê Minh Khôi">
+        </div>
+        <div class="form-field">
+          <label for="form-user-class">Lớp / Khóa Học:</label>
+          <input type="text" id="form-user-class" class="admin-input" placeholder="Ví dụ: 10A1" value="10A1">
+        </div>
+        <div class="form-field">
+          <label for="form-user-password">Mật Khẩu Khởi Tạo:</label>
+          <input type="text" id="form-user-password" class="admin-input" placeholder="Ví dụ: 123" value="123">
+        </div>
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn-admin-secondary" id="btn-cancel-user-single">Hủy</button>
+        <button class="btn-admin-primary" id="btn-save-user-single">Lưu Tài Khoản</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === MODAL TẠO TÀI KHOẢN HÀNG LOẠT THEO CÚ PHÁP === -->
+  <div class="admin-modal-overlay" id="modal-user-bulk">
+    <div class="admin-modal" style="max-width: 580px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title">⚡ Tạo Tài Khoản Học Sinh Hàng Loạt</h3>
+        <button class="btn-icon-action" id="btn-close-user-bulk-modal" style="border: none;">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+          Tự động sinh danh sách tài khoản theo cú pháp bạn tự cấu hình.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="bulk-prefix">Tiền Tố Tên Đăng Nhập:</label>
+            <input type="text" id="bulk-prefix" class="admin-input" value="HS" placeholder="Ví dụ: HS hoặc PY">
+          </div>
+          <div class="form-field">
+            <label for="bulk-class">Lớp Áp Dụng:</label>
+            <input type="text" id="bulk-class" class="admin-input" value="10A1" placeholder="Ví dụ: 10A1">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="bulk-count">Số Lượng Học Sinh Cần Tạo:</label>
+            <input type="number" id="bulk-count" class="admin-input" value="30" min="1" max="100">
+          </div>
+          <div class="form-field">
+            <label for="bulk-password-type">Quy Tắc Mật Khẩu:</label>
+            <select id="bulk-password-type" class="admin-select">
+              <option value="fixed">Mật khẩu chung (123)</option>
+              <option value="user">Theo tên ({username}@123)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field" id="bulk-custom-pass-group">
+          <label for="bulk-default-password">Mật Khẩu Mặc Định:</label>
+          <input type="text" id="bulk-default-password" class="admin-input" value="123">
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--admin-border); border-radius: var(--radius-sm); padding: 12px; font-size: 12.5px;">
+          <strong>🔍 Xem trước mẫu tên đăng nhập:</strong><br>
+          <code id="bulk-preview-text" style="color: var(--accent-orange); font-size: 13px;">HS10A1_01, HS10A1_02, ... HS10A1_30</code>
+        </div>
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn-admin-secondary" id="btn-cancel-user-bulk">Hủy</button>
+        <button class="btn-admin-primary" id="btn-confirm-user-bulk">Tạo Danh Sách Ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === MODAL ĐẶT LẠI MẬT KHẨU HÀNG LOẠT === -->
+  <div class="admin-modal-overlay" id="modal-user-reset-pwd">
+    <div class="admin-modal" style="max-width: 480px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title">🔑 Đặt Lại Mật Khẩu Hàng Loạt</h3>
+        <button class="btn-icon-action" id="btn-close-reset-pwd-modal" style="border: none;">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <div class="form-field">
+          <label for="reset-target-class">Chọn Lớp Cần Đặt Lại Mật Khẩu:</label>
+          <select id="reset-target-class" class="admin-select">
+            <option value="all">Toàn bộ tất cả học sinh</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="reset-new-password">Mật Khẩu Mới Sẽ Áp Dụng:</label>
+          <input type="text" id="reset-new-password" class="admin-input" value="123" placeholder="Nhập mật khẩu mới">
+        </div>
+        <p style="font-size: 12px; color: var(--accent-pink);">
+          ⚠️ Tất cả học sinh thuộc lớp được chọn sẽ có mật khẩu mới này ngay lập tức.
+        </p>
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn-admin-secondary" id="btn-cancel-reset-pwd">Hủy</button>
+        <button class="btn-admin-primary" id="btn-confirm-reset-pwd">Xác Nhận Đổi Mật Khẩu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
   <input type="file" id="input-import-json-file" accept=".json" style="display: none;">
+  <input type="file" id="input-upload-students-file" accept=".csv, .json, .txt" style="display: none;">
 
   <!-- Toast container for instant feedback -->
   <div class="toast-container" id="toast-container"></div>

@@ -49,7 +49,16 @@ function doGet(e) {
         status: "success",
         lessons: getLessonsFromDrive(),
         exercises: getExercisesFromDrive(),
-        students: getStudentRoster()
+        schoolStudents: getSchoolStudentsFromSheet(),
+        googleUsers: getGoogleUsersFromSheet()
+      });
+    }
+
+    if (action === "get_all_users") {
+      return jsonResponse({
+        status: "success",
+        schoolStudents: getSchoolStudentsFromSheet(),
+        googleUsers: getGoogleUsersFromSheet()
       });
     }
 
@@ -74,7 +83,7 @@ function doGet(e) {
 }
 
 /**
- * Xử lý yêu cầu POST: Lưu kết quả nộp bài, điểm số và tiến độ học sinh
+ * Xử lý yêu cầu POST: Lưu kết quả nộp bài, đồng bộ tài khoản học sinh & tài khoản Google
  */
 function doPost(e) {
   try {
@@ -92,6 +101,24 @@ function doPost(e) {
       // Ghi nhận tiến độ học bài lý thuyết
       var result = recordLessonProgress(payload);
       return jsonResponse({ status: "success", message: "Đã cập nhật tiến độ!", data: result });
+    }
+
+    if (action === "sync_school_students") {
+      // Đồng bộ danh sách học sinh trường vào Sheet Tai_Khoan_Hoc_Sinh
+      var count = saveSchoolStudentsToSheet(payload.students || []);
+      return jsonResponse({ status: "success", message: "Đã đồng bộ " + count + " tài khoản học sinh trường lên Google Sheet!" });
+    }
+
+    if (action === "sync_google_user") {
+      // Ghi nhận / Cập nhật tài khoản Google vào Sheet Tai_Khoan_Google
+      var res = recordGoogleUserToSheet(payload.profile || {});
+      return jsonResponse({ status: "success", message: "Đã lưu tài khoản Google!", data: res });
+    }
+
+    if (action === "sync_from_drive_file") {
+      // Bốc tách danh sách học sinh từ file (.csv, .json) mà thầy cô tải lên Drive
+      var importResult = syncStudentsFromUploadedDriveFiles();
+      return jsonResponse({ status: "success", message: importResult.message, count: importResult.count, students: importResult.students });
     }
 
     return jsonResponse({ status: "error", message: "Action POST không hợp lệ" });
@@ -165,25 +192,193 @@ function getExercisesFromDrive() {
 }
 
 /**
- * Lấy danh sách học sinh từ Google Sheet
+ * Lấy danh sách tài khoản học sinh trường từ Google Sheet
  */
-function getStudentRoster() {
-  var sheet = getOrCreateSpreadsheet().getSheetByName("Danh_Sach_Hoc_Sinh");
+function getSchoolStudentsFromSheet() {
+  var ss = getOrCreateSpreadsheet();
+  var sheet = ss.getSheetByName("Tai_Khoan_Hoc_Sinh");
   if (!sheet) return [];
-  
+
   var data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return []; // Chỉ có dòng tiêu đề
+  if (data.length <= 1) return [];
 
   var students = [];
   for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
     students.push({
-      studentId: data[i][0],
-      fullName: data[i][1],
-      className: data[i][2],
-      note: data[i][3] || ""
+      username: String(data[i][0]).trim(),
+      fullName: String(data[i][1] || "").trim(),
+      className: String(data[i][2] || "").trim(),
+      password: String(data[i][3] || "123").trim(),
+      status: String(data[i][4] || "active").toLowerCase() === "locked" ? "locked" : "active",
+      lastLogin: data[i][5] ? String(data[i][5]) : null
     });
   }
   return students;
+}
+
+/**
+ * Lấy danh sách người dùng đăng nhập bằng Google từ Google Sheet
+ */
+function getGoogleUsersFromSheet() {
+  var ss = getOrCreateSpreadsheet();
+  var sheet = ss.getSheetByName("Tai_Khoan_Google");
+  if (!sheet) return [];
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return [];
+
+  var users = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    users.push({
+      email: String(data[i][0]).trim(),
+      fullName: String(data[i][1] || "").trim(),
+      googleId: String(data[i][2] || "").trim(),
+      avatar: String(data[i][3] || "").trim(),
+      lastLogin: data[i][4] ? String(data[i][4]) : null
+    });
+  }
+  return users;
+}
+
+/**
+ * Lưu / Đồng bộ toàn bộ danh sách học sinh trường lên Google Sheet
+ */
+function saveSchoolStudentsToSheet(students) {
+  var ss = getOrCreateSpreadsheet();
+  var sheet = ss.getSheetByName("Tai_Khoan_Hoc_Sinh");
+  if (!sheet) {
+    sheet = ss.insertSheet("Tai_Khoan_Hoc_Sinh");
+  }
+
+  // Xóa dữ liệu cũ trừ header
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.deleteRows(2, lastRow - 1);
+  }
+
+  // Ghi lại header nếu trống
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Mã Học Sinh / Tên Đăng Nhập", "Họ Và Tên", "Lớp", "Mật Khẩu", "Trạng Thái", "Lần Đăng Nhập Cuối"]);
+    sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#d9ead3");
+  }
+
+  var rows = [];
+  for (var i = 0; i < students.length; i++) {
+    var s = students[i];
+    rows.push([
+      s.username || ("HS_" + (i + 1)),
+      s.fullName || "",
+      s.className || "",
+      s.password || "123",
+      s.status || "active",
+      s.lastLogin || ""
+    ]);
+  }
+
+  if (rows.length > 0) {
+    sheet.getRange(2, 1, rows.length, 6).setValues(rows);
+  }
+
+  return rows.length;
+}
+
+/**
+ * Ghi nhận hoặc cập nhật người dùng Google vào Google Sheet
+ */
+function recordGoogleUserToSheet(profile) {
+  if (!profile || !profile.email) return null;
+
+  var ss = getOrCreateSpreadsheet();
+  var sheet = ss.getSheetByName("Tai_Khoan_Google");
+  if (!sheet) {
+    sheet = ss.insertSheet("Tai_Khoan_Google");
+    sheet.appendRow(["Email", "Họ Và Tên", "Google ID", "Ảnh Đại Diện", "Lần Đăng Nhập Cuối"]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#cfe2f3");
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var targetEmail = String(profile.email).toLowerCase().trim();
+  var foundRow = -1;
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).toLowerCase().trim() === targetEmail) {
+      foundRow = i + 1;
+      break;
+    }
+  }
+
+  var now = new Date().toLocaleString("vi-VN");
+  if (foundRow > 0) {
+    // Cập nhật dòng đã có
+    sheet.getRange(foundRow, 2).setValue(profile.fullName || profile.name || "");
+    sheet.getRange(foundRow, 4).setValue(profile.avatar || profile.picture || "");
+    sheet.getRange(foundRow, 5).setValue(now);
+  } else {
+    // Thêm dòng mới
+    sheet.appendRow([
+      targetEmail,
+      profile.fullName || profile.name || "Người dùng Google",
+      profile.googleId || profile.sub || "",
+      profile.avatar || profile.picture || "",
+      now
+    ]);
+  }
+
+  return { email: targetEmail, updated: true };
+}
+
+/**
+ * Tự động bốc tách danh sách học sinh từ file (.csv, .json) tải lên thư mục Python_Course_Data
+ */
+function syncStudentsFromUploadedDriveFiles() {
+  var root = getRootFolder();
+  var files = root.getFiles();
+  var imported = [];
+
+  while (files.hasNext()) {
+    var file = files.next();
+    var name = file.getName().toLowerCase();
+
+    // Bốc tách từ file JSON (ví dụ: danh_sach_hoc_sinh.json)
+    if (name.includes("hoc_sinh") && name.endsWith(".json")) {
+      try {
+        var content = file.getBlob().getDataAsString("UTF-8");
+        var list = JSON.parse(content);
+        if (Array.isArray(list)) {
+          imported = imported.concat(list);
+        }
+      } catch (e) {}
+    }
+
+    // Bốc tách từ file CSV (ví dụ: hocsinh_10a1.csv)
+    if (name.includes("hoc_sinh") && name.endsWith(".csv")) {
+      try {
+        var csvContent = file.getBlob().getDataAsString("UTF-8");
+        var lines = Utilities.parseCsv(csvContent);
+        // Bỏ qua header
+        for (var i = 1; i < lines.length; i++) {
+          var row = lines[i];
+          if (row.length >= 2 && row[0]) {
+            imported.push({
+              username: String(row[0]).trim(),
+              fullName: String(row[1] || "").trim(),
+              className: String(row[2] || "Lớp Mới").trim(),
+              password: String(row[3] || "123").trim()
+            });
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (imported.length > 0) {
+    saveSchoolStudentsToSheet(imported);
+    return { count: imported.length, students: imported, message: "Đã bốc tách thành công " + imported.length + " học sinh từ file tải lên Google Drive!" };
+  }
+
+  return { count: 0, students: [], message: "Không tìm thấy file danh_sach_hoc_sinh (.csv hoặc .json) trong thư mục Drive." };
 }
 
 /**
@@ -194,16 +389,18 @@ function recordExerciseSubmission(payload) {
   var sheet = ss.getSheetByName("Bang_Diem_Bai_Tap");
   if (!sheet) {
     sheet = ss.insertSheet("Bang_Diem_Bai_Tap");
-    sheet.appendRow(["Thời Gian", "Mã Học Sinh", "Tên Học Sinh", "Mã Bài Tập", "Điểm Số", "Trạng Thái", "Mã Nguồn Đã Nộp"]);
-    sheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#d9ead3");
+    sheet.appendRow(["Thời Gian", "Loại Tài Khoản", "Tên Đăng Nhập / Email", "Họ Và Tên", "Lớp", "Mã Bài Tập", "Điểm Số", "Trạng Thái", "Mã Nguồn Đã Nộp"]);
+    sheet.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#fff2cc");
   }
 
   var row = [
-    new Date(),
-    payload.studentId || "ANONYMOUS",
-    payload.studentName || "Học sinh ẩn danh",
+    new Date().toLocaleString("vi-VN"),
+    payload.userType || (payload.email ? "Google" : "Học Sinh Trường"),
+    payload.username || payload.email || payload.studentId || "ANONYMOUS",
+    payload.fullName || payload.studentName || "Học sinh ẩn danh",
+    payload.className || "Tự do",
     payload.exerciseId || "Unknown",
-    payload.score || 100,
+    payload.score || 10,
     payload.passed ? "ĐẠT (Passed)" : "CHƯA ĐẠT (Failed)",
     payload.submittedCode || ""
   ];
@@ -220,13 +417,13 @@ function recordLessonProgress(payload) {
   var sheet = ss.getSheetByName("Tien_Do_Hoc_Tap");
   if (!sheet) {
     sheet = ss.insertSheet("Tien_Do_Hoc_Tap");
-    sheet.appendRow(["Thời Gian", "Mã Học Sinh", "Mã Bài Học", "Trạng Thái"]);
+    sheet.appendRow(["Thời Gian", "Mã Học Sinh / Email", "Mã Bài Học", "Trạng Thái"]);
     sheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#cfe2f3");
   }
 
   sheet.appendRow([
-    new Date(),
-    payload.studentId || "ANONYMOUS",
+    new Date().toLocaleString("vi-VN"),
+    payload.username || payload.studentId || "ANONYMOUS",
     payload.lessonId || "Unknown",
     "Đã Hoàn Thành"
   ]);
@@ -245,7 +442,6 @@ function getRootFolder() {
     }
   }
 
-  // Nếu không có hoặc lỗi ID, tìm hoặc tạo thư mục "Python_Course_Data"
   var it = DriveApp.getFoldersByName("Python_Course_Data");
   if (it.hasNext()) {
     return it.next();
@@ -294,12 +490,25 @@ function getOrCreateSpreadsheet() {
     DriveApp.getRootFolder().removeFile(ssFile);
   }
 
+  // Thiết lập 3 Tab Sheets chuẩn
+  // Tab 1: Tài khoản học sinh trường
   var s1 = ss.getActiveSheet();
-  s1.setName("Danh_Sach_Hoc_Sinh");
-  s1.appendRow(["Mã Học Sinh", "Họ Và Tên", "Lớp", "Ghi Chú"]);
-  s1.appendRow(["HS01", "Nguyễn Văn An", "10A1", "Học sinh mẫu"]);
-  s1.appendRow(["HS02", "Trần Thị Bình", "10A1", "Học sinh mẫu"]);
-  s1.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#fff2cc");
+  s1.setName("Tai_Khoan_Hoc_Sinh");
+  s1.appendRow(["Mã Học Sinh / Tên Đăng Nhập", "Họ Và Tên", "Lớp", "Mật Khẩu", "Trạng Thái", "Lần Đăng Nhập Cuối"]);
+  s1.appendRow(["HS10A1_01", "Nguyễn Văn An", "10A1", "123", "Hoạt động", ""]);
+  s1.appendRow(["HS10A1_02", "Trần Thị Bình", "10A1", "123", "Hoạt động", ""]);
+  s1.appendRow(["HS10A1_03", "Lê Hoàng Cường", "10A1", "123", "Hoạt động", ""]);
+  s1.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#d9ead3");
+
+  // Tab 2: Tài khoản Google
+  var s2 = ss.insertSheet("Tai_Khoan_Google");
+  s2.appendRow(["Email", "Họ Và Tên", "Google ID", "Ảnh Đại Diện", "Lần Đăng Nhập Cuối"]);
+  s2.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#cfe2f3");
+
+  // Tab 3: Bảng điểm
+  var s3 = ss.insertSheet("Bang_Diem_Bai_Tap");
+  s3.appendRow(["Thời Gian", "Loại Tài Khoản", "Tên Đăng Nhập / Email", "Họ Và Tên", "Lớp", "Mã Bài Tập", "Điểm Số", "Trạng Thái", "Mã Nguồn Đã Nộp"]);
+  s3.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#fff2cc");
 
   return ss;
 }

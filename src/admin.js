@@ -21,6 +21,7 @@ class AdminController {
     this.renderCurriculum();
     this.loadDriveConfig();
     this.loadStudentSubmissions();
+    this.loadUserManagement();
     this.bindActionButtons();
   }
 
@@ -53,7 +54,8 @@ class AdminController {
       'panel-features': '<span>🎛️</span> Quản Lý Tính Năng & Giao Diện',
       'panel-curriculum': '<span>📚</span> Quản Lý Bài Học & Giáo Trình',
       'panel-drive': '<span>☁️</span> Kết Nối Google Drive & Sheets CMS',
-      'panel-students': '<span>🎓</span> Quản Lý Học Sinh & Bảng Điểm'
+      'panel-users': '<span>👥</span> Quản Lý Tài Khoản Người Dùng',
+      'panel-students': '<span>🎓</span> Sổ Điểm & Lịch Sử Bài Nộp'
     };
 
     menuItems.forEach(item => {
@@ -76,6 +78,7 @@ class AdminController {
 
         // Tải lại dữ liệu tương ứng
         if (targetId === 'panel-overview') this.loadOverview();
+        if (targetId === 'panel-users') this.loadUserManagement();
         if (targetId === 'panel-students') this.loadStudentSubmissions();
         if (targetId === 'panel-curriculum') this.renderCurriculum();
       });
@@ -605,6 +608,516 @@ class AdminController {
     document.body.removeChild(link);
 
     this.showToast("Đã xuất file bảng điểm CSV thành công!");
+  }
+
+  // === 5.5 QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG (USERS MANAGEMENT) ===
+  loadUserManagement() {
+    this.renderSchoolStudents();
+    this.renderGoogleUsers();
+    this.bindUserSubtabs();
+    this.bindUserActionEvents();
+  }
+
+  bindUserSubtabs() {
+    const tabs = document.querySelectorAll('.auth-subtab-btn');
+    const subpanels = document.querySelectorAll('.subpanel-user');
+
+    tabs.forEach(btn => {
+      btn.onclick = () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+
+        const targetId = btn.dataset.target;
+        subpanels.forEach(p => {
+          if (p.id === targetId) {
+            p.style.display = 'block';
+          } else {
+            p.style.display = 'none';
+          }
+        });
+      };
+    });
+  }
+
+  renderSchoolStudents() {
+    const tbody = document.getElementById('tbody-school-users');
+    if (!tbody) return;
+
+    const list = adminStore.getSchoolStudents();
+    const badge = document.getElementById('badge-count-school-users');
+    if (badge) badge.textContent = list.length;
+
+    // Cập nhật bộ lọc lớp học
+    const classSelect = document.getElementById('filter-school-class');
+    const selectedClass = classSelect ? classSelect.value : 'all';
+    if (classSelect) {
+      const classes = Array.from(new Set(list.map(s => s.className).filter(Boolean)));
+      classSelect.innerHTML = '<option value="all">Tất cả lớp</option>' + 
+        classes.map(c => `<option value="${this.escape(c)}" ${c === selectedClass ? 'selected' : ''}>Lớp ${this.escape(c)}</option>`).join('');
+    }
+
+    const searchQuery = (document.getElementById('search-school-user')?.value || '').toLowerCase().trim();
+    const filterClass = classSelect ? classSelect.value : 'all';
+
+    const filtered = list.filter(s => {
+      const matchSearch = !searchQuery || 
+        s.username.toLowerCase().includes(searchQuery) || 
+        s.fullName.toLowerCase().includes(searchQuery);
+      const matchClass = filterClass === 'all' || s.className === filterClass;
+      return matchSearch && matchClass;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            Không tìm thấy tài khoản học sinh nào phù hợp.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(s => {
+      const isLocked = s.status === 'locked';
+      return `
+        <tr data-username="${this.escape(s.username)}">
+          <td><code style="color: var(--accent-orange); font-weight: 700; font-size: 13px;">${this.escape(s.username)}</code></td>
+          <td><strong>${this.escape(s.fullName)}</strong></td>
+          <td><span style="background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px; font-size: 12px;">${this.escape(s.className)}</span></td>
+          <td>
+            <div class="user-pwd-box">
+              <span class="pwd-val" data-pwd="${this.escape(s.password)}">••••••</span>
+              <button class="btn-icon-action btn-toggle-pwd" title="Xem/Ẩn mật khẩu" style="width: 24px; height: 24px; font-size: 10px;">👁️</button>
+            </div>
+          </td>
+          <td>
+            <span class="user-status-badge ${isLocked ? 'locked' : 'active'}">
+              ${isLocked ? '🔒 Đã khóa' : '🟢 Hoạt động'}
+            </span>
+          </td>
+          <td><span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${s.lastLogin ? new Date(s.lastLogin).toLocaleString('vi-VN') : 'Chưa đăng nhập'}</span></td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-icon-action btn-edit-student" data-username="${this.escape(s.username)}" title="Sửa thông tin">✏️</button>
+              <button class="btn-icon-action btn-lock-student" data-username="${this.escape(s.username)}" title="${isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}">${isLocked ? '🔓' : '🔒'}</button>
+              <button class="btn-icon-action delete btn-delete-student" data-username="${this.escape(s.username)}" title="Xóa tài khoản">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Toggle hiện mật khẩu
+    tbody.querySelectorAll('.btn-toggle-pwd').forEach(btn => {
+      btn.onclick = () => {
+        const valSpan = btn.previousElementSibling;
+        if (!valSpan) return;
+        if (valSpan.textContent === '••••••') {
+          valSpan.textContent = valSpan.dataset.pwd;
+          btn.textContent = '🙈';
+        } else {
+          valSpan.textContent = '••••••';
+          btn.textContent = '👁️';
+        }
+      };
+    });
+
+    // Sửa học sinh
+    tbody.querySelectorAll('.btn-edit-student').forEach(btn => {
+      btn.onclick = () => this.openEditStudentModal(btn.dataset.username);
+    });
+
+    // Khóa / Mở khóa
+    tbody.querySelectorAll('.btn-lock-student').forEach(btn => {
+      btn.onclick = () => {
+        const u = btn.dataset.username;
+        const newStatus = adminStore.toggleUserStatus('school', u);
+        this.showToast(`Đã ${newStatus === 'locked' ? 'khóa' : 'mở khóa'} tài khoản ${u}!`);
+        this.renderSchoolStudents();
+      };
+    });
+
+    // Xóa học sinh
+    tbody.querySelectorAll('.btn-delete-student').forEach(btn => {
+      btn.onclick = () => {
+        const u = btn.dataset.username;
+        if (confirm(`Bạn có chắc chắn muốn xóa tài khoản học sinh "${u}" không?`)) {
+          adminStore.deleteSchoolStudent(u);
+          this.showToast(`Đã xóa tài khoản ${u}!`);
+          this.renderSchoolStudents();
+        }
+      };
+    });
+  }
+
+  renderGoogleUsers() {
+    const tbody = document.getElementById('tbody-google-users');
+    if (!tbody) return;
+
+    const list = adminStore.getGoogleUsers();
+    const badge = document.getElementById('badge-count-google-users');
+    if (badge) badge.textContent = list.length;
+
+    const query = (document.getElementById('search-google-user')?.value || '').toLowerCase().trim();
+    const filtered = list.filter(u => {
+      return !query || u.email.toLowerCase().includes(query) || u.fullName.toLowerCase().includes(query);
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            Chưa có người dùng nào đăng nhập bằng Google. Khi có người dùng truy cập bằng Google, danh sách sẽ xuất hiện tại đây!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(u => {
+      const isLocked = u.status === 'locked';
+      const avatarSrc = u.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.email)}`;
+      return `
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${avatarSrc}" class="user-avatar-small" alt="${this.escape(u.fullName)}">
+              <strong>${this.escape(u.fullName)}</strong>
+            </div>
+          </td>
+          <td><code style="color: var(--accent-cyan);">${this.escape(u.email)}</code></td>
+          <td><span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${this.escape(u.googleId)}</span></td>
+          <td>
+            <span class="user-status-badge ${isLocked ? 'locked' : 'active'}">
+              ${isLocked ? '🔒 Đã chặn' : '🟢 Cho phép'}
+            </span>
+          </td>
+          <td><span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${u.lastLogin ? new Date(u.lastLogin).toLocaleString('vi-VN') : 'Mới tạo'}</span></td>
+          <td>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-icon-action btn-lock-google" data-email="${this.escape(u.email)}" title="${isLocked ? 'Bỏ chặn' : 'Chặn truy cập'}">${isLocked ? '🔓' : '🔒'}</button>
+              <button class="btn-icon-action delete btn-delete-google" data-email="${this.escape(u.email)}" title="Xóa tài khoản Google">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-lock-google').forEach(btn => {
+      btn.onclick = () => {
+        const email = btn.dataset.email;
+        const newStatus = adminStore.toggleUserStatus('google', email);
+        this.showToast(`Đã ${newStatus === 'locked' ? 'chặn' : 'bỏ chặn'} người dùng ${email}!`);
+        this.renderGoogleUsers();
+      };
+    });
+
+    tbody.querySelectorAll('.btn-delete-google').forEach(btn => {
+      btn.onclick = () => {
+        const email = btn.dataset.email;
+        if (confirm(`Bạn có chắc chắn muốn xóa người dùng Google "${email}" khỏi hệ thống không?`)) {
+          adminStore.deleteGoogleUser(email);
+          this.showToast(`Đã xóa người dùng Google ${email}!`);
+          this.renderGoogleUsers();
+        }
+      };
+    });
+  }
+
+  openAddStudentModal() {
+    const modal = document.getElementById('modal-user-single');
+    document.getElementById('user-single-modal-title').textContent = '➕ Thêm Học Sinh Mới';
+    document.getElementById('form-user-edit-mode').value = 'add';
+    document.getElementById('form-user-username').value = '';
+    document.getElementById('form-user-username').disabled = false;
+    document.getElementById('form-user-fullname').value = '';
+    document.getElementById('form-user-class').value = '10A1';
+    document.getElementById('form-user-password').value = '123';
+    modal?.classList.add('show');
+  }
+
+  openEditStudentModal(username) {
+    const list = adminStore.getSchoolStudents();
+    const student = list.find(s => s.username.toUpperCase() === username.toUpperCase());
+    if (!student) return;
+
+    const modal = document.getElementById('modal-user-single');
+    document.getElementById('user-single-modal-title').textContent = `✏️ Chỉnh Sửa: ${student.username}`;
+    document.getElementById('form-user-edit-mode').value = 'edit';
+    document.getElementById('form-user-username').value = student.username;
+    document.getElementById('form-user-username').disabled = true;
+    document.getElementById('form-user-fullname').value = student.fullName;
+    document.getElementById('form-user-class').value = student.className;
+    document.getElementById('form-user-password').value = student.password;
+    modal?.classList.add('show');
+  }
+
+  saveSingleStudent() {
+    const mode = document.getElementById('form-user-edit-mode').value;
+    const username = document.getElementById('form-user-username').value.trim();
+    const fullName = document.getElementById('form-user-fullname').value.trim();
+    const className = document.getElementById('form-user-class').value.trim() || '10A1';
+    const password = document.getElementById('form-user-password').value.trim() || '123';
+
+    if (!username || !fullName) {
+      alert("Vui lòng nhập đầy đủ Mã học sinh và Họ tên!");
+      return;
+    }
+
+    try {
+      if (mode === 'add') {
+        adminStore.addSchoolStudent({ username, fullName, className, password });
+        this.showToast(`Đã thêm học sinh ${username} thành công!`);
+      } else {
+        adminStore.updateSchoolStudent(username, { fullName, className, password });
+        this.showToast(`Đã cập nhật học sinh ${username}!`);
+      }
+      document.getElementById('modal-user-single')?.classList.remove('show');
+      this.renderSchoolStudents();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  updateBulkPreview() {
+    const prefix = document.getElementById('bulk-prefix')?.value.trim().toUpperCase() || 'HS';
+    const className = document.getElementById('bulk-class')?.value.trim().replace(/\s+/g, '') || '10A1';
+    const count = parseInt(document.getElementById('bulk-count')?.value, 10) || 30;
+    const previewEl = document.getElementById('bulk-preview-text');
+    if (!previewEl) return;
+
+    const maxDisplay = Math.min(count, 3);
+    const parts = [];
+    for (let i = 1; i <= maxDisplay; i++) {
+      const stt = i < 10 ? `0${i}` : `${i}`;
+      parts.push(`${prefix}${className}_${stt}`);
+    }
+    if (count > 3) {
+      const lastStt = count < 10 ? `0${count}` : `${count}`;
+      parts.push(`... ${prefix}${className}_${lastStt}`);
+    }
+    previewEl.textContent = parts.join(', ');
+  }
+
+  confirmBulkGenerate() {
+    const prefix = document.getElementById('bulk-prefix')?.value.trim() || 'HS';
+    const className = document.getElementById('bulk-class')?.value.trim() || '10A1';
+    const count = parseInt(document.getElementById('bulk-count')?.value, 10) || 30;
+    const passwordPattern = document.getElementById('bulk-password-type')?.value || 'fixed';
+    const defaultPassword = document.getElementById('bulk-default-password')?.value.trim() || '123';
+
+    const res = adminStore.bulkGenerateStudents({ prefix, className, count, passwordPattern, defaultPassword });
+    this.showToast(`Đã tạo thành công ${count} tài khoản cho lớp ${className}!`);
+    document.getElementById('modal-user-bulk')?.classList.remove('show');
+    this.renderSchoolStudents();
+  }
+
+  openBulkResetModal() {
+    const modal = document.getElementById('modal-user-reset-pwd');
+    const select = document.getElementById('reset-target-class');
+    if (select) {
+      const list = adminStore.getSchoolStudents();
+      const classes = Array.from(new Set(list.map(s => s.className).filter(Boolean)));
+      select.innerHTML = '<option value="all">Toàn bộ tất cả học sinh</option>' + 
+        classes.map(c => `<option value="${this.escape(c)}">Chỉ áp dụng Lớp ${this.escape(c)}</option>`).join('');
+    }
+    document.getElementById('reset-new-password').value = '123';
+    modal?.classList.add('show');
+  }
+
+  confirmBulkResetPassword() {
+    const targetClass = document.getElementById('reset-target-class')?.value || 'all';
+    const newPassword = document.getElementById('reset-new-password')?.value.trim() || '123';
+    const list = adminStore.getSchoolStudents();
+
+    const targetUsernames = list
+      .filter(s => targetClass === 'all' || s.className === targetClass)
+      .map(s => s.username);
+
+    if (targetUsernames.length === 0) {
+      alert("Không có học sinh nào thuộc lớp này!");
+      return;
+    }
+
+    if (confirm(`Bạn có chắc muốn đặt lại mật khẩu cho ${targetUsernames.length} học sinh thành "${newPassword}"?`)) {
+      const count = adminStore.bulkResetPassword(targetUsernames, newPassword);
+      this.showToast(`Đã đổi mật khẩu cho ${count} học sinh thành công!`);
+      document.getElementById('modal-user-reset-pwd')?.classList.remove('show');
+      this.renderSchoolStudents();
+    }
+  }
+
+  async syncStudentsToDriveSheet() {
+    if (!this.driveSync.isConnected()) {
+      alert("Chưa kết nối Google Drive! Vui lòng vào tab Google Drive CMS để lưu Web App URL trước.");
+      return;
+    }
+
+    const students = adminStore.getSchoolStudents();
+    const btn = document.getElementById('btn-sync-students-drive');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Đang lưu lên Sheet...</span>';
+    }
+
+    try {
+      await fetch(this.driveSync.getApiUrl(), {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sync_school_students',
+          students: students
+        })
+      });
+      this.showToast(`Đã gửi đồng bộ ${students.length} học sinh vào Sheet Tai_Khoan_Hoc_Sinh!`);
+    } catch (e) {
+      this.showToast("Lỗi đồng bộ lên Google Sheet: " + e.message, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>☁️ Lưu Lên Google Sheet</span>';
+      }
+    }
+  }
+
+  async syncGoogleUsersFromSheet() {
+    if (!this.driveSync.isConnected()) {
+      alert("Chưa kết nối Google Drive!");
+      return;
+    }
+
+    const btn = document.getElementById('btn-sync-google-sheet');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Đang tải...";
+    }
+
+    try {
+      const endpoint = this.driveSync.getApiUrl().includes('?')
+        ? `${this.driveSync.getApiUrl()}&action=get_all_users`
+        : `${this.driveSync.getApiUrl()}?action=get_all_users`;
+
+      const res = await fetch(endpoint, { method: 'GET', mode: 'cors' });
+      const data = await res.json();
+
+      if (data && data.status === 'success') {
+        if (Array.isArray(data.googleUsers)) {
+          adminStore.saveGoogleUsers(data.googleUsers);
+        }
+        if (Array.isArray(data.schoolStudents) && data.schoolStudents.length > 0) {
+          adminStore.saveSchoolStudents(data.schoolStudents);
+        }
+        this.showToast("Đã cập nhật danh sách người dùng từ Google Sheet thành công!");
+        this.renderGoogleUsers();
+        this.renderSchoolStudents();
+      }
+    } catch (e) {
+      this.showToast("Lỗi tải từ Google Sheet: " + e.message, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "🔄 Tải Danh Sách Từ Google Sheet";
+      }
+    }
+  }
+
+  bindUserActionEvents() {
+    // Tìm kiếm & lọc
+    document.getElementById('search-school-user')?.addEventListener('input', () => this.renderSchoolStudents());
+    document.getElementById('filter-school-class')?.addEventListener('change', () => this.renderSchoolStudents());
+    document.getElementById('search-google-user')?.addEventListener('input', () => this.renderGoogleUsers());
+
+    // Nút mở modal
+    document.getElementById('btn-open-add-student-modal')?.addEventListener('click', () => this.openAddStudentModal());
+    document.getElementById('btn-open-bulk-modal')?.addEventListener('click', () => {
+      this.updateBulkPreview();
+      document.getElementById('modal-user-bulk')?.classList.add('show');
+    });
+    document.getElementById('btn-open-bulk-reset-modal')?.addEventListener('click', () => this.openBulkResetModal());
+
+    // Modal đóng
+    document.getElementById('btn-close-user-single-modal')?.addEventListener('click', () => {
+      document.getElementById('modal-user-single')?.classList.remove('show');
+    });
+    document.getElementById('btn-cancel-user-single')?.addEventListener('click', () => {
+      document.getElementById('modal-user-single')?.classList.remove('show');
+    });
+    document.getElementById('btn-save-user-single')?.addEventListener('click', () => this.saveSingleStudent());
+
+    document.getElementById('btn-close-user-bulk-modal')?.addEventListener('click', () => {
+      document.getElementById('modal-user-bulk')?.classList.remove('show');
+    });
+    document.getElementById('btn-cancel-user-bulk')?.addEventListener('click', () => {
+      document.getElementById('modal-user-bulk')?.classList.remove('show');
+    });
+    document.getElementById('btn-confirm-user-bulk')?.addEventListener('click', () => this.confirmBulkGenerate());
+
+    // Bulk preview dynamic update
+    ['bulk-prefix', 'bulk-class', 'bulk-count'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => this.updateBulkPreview());
+    });
+
+    // Reset password modal
+    document.getElementById('btn-close-reset-pwd-modal')?.addEventListener('click', () => {
+      document.getElementById('modal-user-reset-pwd')?.classList.remove('show');
+    });
+    document.getElementById('btn-cancel-reset-pwd')?.addEventListener('click', () => {
+      document.getElementById('modal-user-reset-pwd')?.classList.remove('show');
+    });
+    document.getElementById('btn-confirm-reset-pwd')?.addEventListener('click', () => this.confirmBulkResetPassword());
+
+    // Đồng bộ Drive & Sheets
+    document.getElementById('btn-sync-students-drive')?.addEventListener('click', () => this.syncStudentsToDriveSheet());
+    document.getElementById('btn-sync-google-sheet')?.addEventListener('click', () => this.syncGoogleUsersFromSheet());
+
+    // Upload file danh sách học sinh
+    const fileInput = document.getElementById('input-upload-students-file');
+    document.getElementById('btn-import-students-file')?.addEventListener('click', () => fileInput?.click());
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const content = evt.target.result;
+          let parsedRows = [];
+
+          if (file.name.endsWith('.json')) {
+            parsedRows = JSON.parse(content);
+          } else {
+            // Parse CSV format (Mã HS, Họ tên, Lớp, Mật khẩu)
+            const lines = content.split(/\r?\n/).filter(line => line.trim());
+            for (let i = 0; i < lines.length; i++) {
+              const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+              if (cols.length >= 2 && !cols[0].toLowerCase().includes('mã') && !cols[0].toLowerCase().includes('username')) {
+                parsedRows.push({
+                  username: cols[0],
+                  fullName: cols[1],
+                  className: cols[2] || '10A1',
+                  password: cols[3] || '123'
+                });
+              }
+            }
+          }
+
+          if (parsedRows.length > 0) {
+            const added = adminStore.importStudentsFromList(parsedRows);
+            this.showToast(`Đã nhập thành công ${added} học sinh từ file ${file.name}!`);
+            this.renderSchoolStudents();
+          } else {
+            alert("File không chứa dữ liệu học sinh hợp lệ!");
+          }
+        } catch (err) {
+          alert("Lỗi đọc file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      fileInput.value = '';
+    });
   }
 
   // === 6. SỰ KIỆN NÚT HÀNH ĐỘNG KHÁC ===

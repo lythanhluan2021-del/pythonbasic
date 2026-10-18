@@ -59,6 +59,10 @@ class PySublimeApp {
     // 4. Gắn sự kiện giao diện
     this.bindEvents();
 
+    // 4.1 Khởi tạo kích thước chữ toàn diện (Bài học, Editor, Console)
+    const savedFontSize = parseInt(localStorage.getItem('pysublime_universal_font_size'), 10) || (window.innerWidth < 992 ? 17 : 14);
+    this.applyUniversalFontSize(savedFontSize);
+
     // 5. Cập nhật trạng thái Drive & Profile
     this.updateDriveStatusUI();
     this.updateStudentBadgeUI();
@@ -171,15 +175,22 @@ class PySublimeApp {
       }
     });
 
-    // === NÚT TĂNG/GIẢM CỠ CHỮ DI ĐỘNG (A- / A+) ===
+    // === NÚT TĂNG/GIẢM CỠ CHỮ TOÀN DIỆN DI ĐỘNG (A- / A+) ===
     document.getElementById('btn-mobile-font-inc')?.addEventListener('click', () => {
-      const newSize = this.editor.increaseFontSize();
-      this.showToast(`Cỡ chữ: ${newSize}px`);
+      this.increaseUniversalFontSize();
     });
     document.getElementById('btn-mobile-font-dec')?.addEventListener('click', () => {
-      const newSize = this.editor.decreaseFontSize();
-      this.showToast(`Cỡ chữ: ${newSize}px`);
+      this.decreaseUniversalFontSize();
     });
+
+    // === NÚT ĐIỀU HƯỚNG BÀI HỌC (TRƯỚC / KẾ TIẾP) ===
+    document.getElementById('btn-prev-lesson-top')?.addEventListener('click', () => this.goToPrevLesson());
+    document.getElementById('btn-next-lesson-top')?.addEventListener('click', () => this.goToNextLesson());
+    document.getElementById('btn-prev-lesson-btm')?.addEventListener('click', () => this.goToPrevLesson());
+    document.getElementById('btn-next-lesson-btm')?.addEventListener('click', () => this.goToNextLesson());
+
+    // Kích hoạt cử chỉ vuốt ngón tay chuyển bài (Touch Swipe Gestures)
+    this.setupSwipeNavigation();
 
     // === CHUYỂN ĐỔI TAB VIEW TRÊN ĐIỆN THOẠI (FALLBACK) ===
     const navButtons = document.querySelectorAll('.nav-tab-btn');
@@ -608,16 +619,159 @@ class PySublimeApp {
   /**
    * Lấy bài học kế tiếp trong lộ trình
    */
-  getNextLesson() {
-    if (!this.currentLesson) return null;
-    let foundCurrent = false;
-    for (const mod of this.currentModules) {
-      for (const lesson of mod.lessons) {
-        if (foundCurrent) return lesson;
-        if (lesson.id === this.currentLesson.id) {
-          foundCurrent = true;
+  getAllLessons() {
+    const list = [];
+    (this.currentModules || []).forEach(m => {
+      (m.lessons || []).forEach(l => list.push(l));
+    });
+    return list;
+  }
+
+  getCurrentLessonIndex() {
+    const all = this.getAllLessons();
+    return all.findIndex(l => l.id === this.currentLesson?.id);
+  }
+
+  goToNextLesson() {
+    const all = this.getAllLessons();
+    const idx = this.getCurrentLessonIndex();
+    if (idx !== -1 && idx < all.length - 1) {
+      this.selectLesson(all[idx + 1].id);
+      this.showToast(`📖 Đang mở: ${all[idx + 1].title}`);
+      return true;
+    } else {
+      this.showToast(`🎉 Bạn đã ở bài học cuối cùng!`);
+      return false;
+    }
+  }
+
+  goToPrevLesson() {
+    const all = this.getAllLessons();
+    const idx = this.getCurrentLessonIndex();
+    if (idx > 0) {
+      this.selectLesson(all[idx - 1].id);
+      this.showToast(`📖 Đang mở: ${all[idx - 1].title}`);
+      return true;
+    } else {
+      this.showToast(`ℹ️ Bạn đang ở bài học đầu tiên!`);
+      return false;
+    }
+  }
+
+  setupSwipeNavigation() {
+    const theoryPanel = document.getElementById('panel-theory');
+    if (!theoryPanel) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    theoryPanel.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    theoryPanel.addEventListener('touchend', (e) => {
+      if (e.target.closest('.theory-code-block, select, button, input')) return;
+
+      const touchEndX = e.changedTouches[0].screenX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+
+      // Vuốt ngang rõ rệt (diffX > 60px và ngang gấp 1.5 lần dọc)
+      if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+        if (diffX < 0) {
+          // Vuốt sang trái -> Sang bài kế tiếp
+          this.goToNextLesson();
+        } else {
+          // Vuốt sang phải -> Về bài trước
+          this.goToPrevLesson();
         }
       }
+    }, { passive: true });
+  }
+
+  applyUniversalFontSize(size) {
+    this.currentFontSize = Math.max(13, Math.min(26, size));
+    document.documentElement.style.setProperty('--theory-body-size', `${this.currentFontSize}px`);
+
+    const markdownBody = document.getElementById('lesson-markdown-body');
+    if (markdownBody) markdownBody.style.fontSize = `${this.currentFontSize}px`;
+
+    const practiceContainer = document.getElementById('lesson-practice-container');
+    if (practiceContainer) practiceContainer.style.fontSize = `${this.currentFontSize}px`;
+
+    if (this.editor && typeof this.editor.setFontSize === 'function') {
+      this.editor.setFontSize(this.currentFontSize);
+    }
+
+    const termScreen = document.getElementById('terminal-screen');
+    if (termScreen) termScreen.style.fontSize = `${this.currentFontSize}px`;
+    const drawerScreen = document.getElementById('drawer-terminal-screen');
+    if (drawerScreen) drawerScreen.style.fontSize = `${this.currentFontSize}px`;
+
+    localStorage.setItem('pysublime_universal_font_size', this.currentFontSize);
+  }
+
+  increaseUniversalFontSize() {
+    const current = this.currentFontSize || 17;
+    const next = Math.min(26, current + 2);
+    this.applyUniversalFontSize(next);
+    this.showToast(`🔍 Cỡ chữ: ${next}px (Đã phóng to bài học & code)`);
+  }
+
+  decreaseUniversalFontSize() {
+    const current = this.currentFontSize || 17;
+    const next = Math.max(13, current - 2);
+    this.applyUniversalFontSize(next);
+    this.showToast(`🔍 Cỡ chữ: ${next}px (Đã thu nhỏ bài học & code)`);
+  }
+
+  renderMarkdownToHtml(markdown) {
+    if (!markdown) return '';
+    let text = String(markdown).trim();
+
+    // 1. Xử lý khối code ba dấu nháy (```python ... ```) trước để không bị dính nháy đơn
+    text = text.replace(/```(?:python|py)?\r?\n([\s\S]*?)```/gim, (m, code) => {
+      return `<div class="theory-code-container"><div class="theory-code-header"><span class="code-lang-tag">🐍 Python Code</span><span class="code-scroll-hint">Cuộn ngang để xem ➜</span></div><pre class="theory-code-block"><code>${this.escapeHtml(code.trim())}</code></pre></div>`;
+    });
+
+    // 2. Tiêu đề
+    text = text
+      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+    // 3. Đậm & Mã nội dòng
+    text = text
+      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/gim, '<code class="inline-code">$1</code>');
+
+    // 4. Danh sách gạch đầu dòng
+    text = text.replace(/^[*-] (.*$)/gim, '<li>$1</li>');
+    text = text.replace(/(<li>[\s\S]*?<\/li>)/gim, '<ul>$1</ul>');
+    text = text.replace(/<\/ul>\s*<ul>/gim, '');
+
+    // 5. Đoạn văn bản
+    text = text.replace(/\n\n+/gim, '</p><p>');
+    text = `<p>${text}</p>`;
+    text = text
+      .replace(/<p>\s*<\/p>/gim, '')
+      .replace(/<p>\s*(<h[1-3]>)/gim, '$1')
+      .replace(/(<\/h[1-3]>)\s*<\/p>/gim, '$1')
+      .replace(/<p>\s*(<div class="theory-code-container">)/gim, '$1')
+      .replace(/(<\/div>)\s*<\/p>/gim, '$1')
+      .replace(/<p>\s*(<ul>)/gim, '$1')
+      .replace(/(<\/ul>)\s*<\/p>/gim, '$1');
+
+    return text;
+  }
+
+  getNextLesson() {
+    const all = this.getAllLessons();
+    const idx = this.getCurrentLessonIndex();
+    if (idx !== -1 && idx < all.length - 1) {
+      return all[idx + 1];
     }
     return null;
   }
@@ -635,13 +789,38 @@ class PySublimeApp {
     if (!foundLesson) return;
     this.currentLesson = foundLesson;
 
-    // Cập nhật selector
+    // Cập nhật selector dropdown
     const selector = document.getElementById('lesson-dropdown-select');
     if (selector && selector.value !== lessonId) {
       selector.value = lessonId;
     }
 
-    // Render Lý thuyết
+    // Cập nhật chỉ số phân trang và trạng thái nút Trước / Sau
+    const allLessons = this.getAllLessons();
+    const idx = this.getCurrentLessonIndex();
+    const pageCurr = document.getElementById('lesson-page-curr');
+    const pageTotal = document.getElementById('lesson-page-total');
+    if (pageCurr && pageTotal) {
+      pageCurr.textContent = `Bài ${idx + 1}`;
+      pageTotal.textContent = allLessons.length;
+    }
+
+    const prevBtns = [document.getElementById('btn-prev-lesson-top'), document.getElementById('btn-prev-lesson-btm')];
+    const nextBtns = [document.getElementById('btn-next-lesson-top'), document.getElementById('btn-next-lesson-btm')];
+    prevBtns.forEach(b => {
+      if (b) {
+        b.style.opacity = idx === 0 ? '0.35' : '1';
+        b.style.pointerEvents = idx === 0 ? 'none' : 'auto';
+      }
+    });
+    nextBtns.forEach(b => {
+      if (b) {
+        b.style.opacity = idx === allLessons.length - 1 ? '0.35' : '1';
+        b.style.pointerEvents = idx === allLessons.length - 1 ? 'none' : 'auto';
+      }
+    });
+
+    // Render Lý thuyết bài học
     this.renderLessonTheory(foundLesson);
 
     // Mở code vào tab IDE: Ưu tiên tải bản nháp học sinh đang viết dở (Auto-saved Draft)
@@ -650,22 +829,16 @@ class PySublimeApp {
       ? savedDraft
       : (foundLesson.sampleCode || '# Viết mã Python tại đây\n');
     this.editor.createOrUpdateTab('main.py', 'main.py', codeToLoad);
+
+    // Tự động cuộn lên đầu trang lý thuyết
+    document.getElementById('panel-theory')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   renderLessonTheory(lesson) {
     const theoryBody = document.getElementById('lesson-markdown-body');
     if (!theoryBody) return;
 
-    // Simple markdown renderer for headers, bold, tables, and code snippets
-    let html = lesson.theory
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/gim, '<code style="color: #fd971f; background: #191a18; padding: 2px 5px; border-radius: 4px;">$1</code>')
-      .replace(/\n\n/gim, '<p></p>');
-
-    theoryBody.innerHTML = html;
+    theoryBody.innerHTML = this.renderMarkdownToHtml(lesson.theory);
 
     // Render nút nạp code mẫu
     const sampleBox = document.getElementById('lesson-sample-code-box');

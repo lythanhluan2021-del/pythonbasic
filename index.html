@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <!-- Instant Login Protection Guard (Chặn ngay lập tức nếu chưa đăng nhập) -->
   <script>
     (function() {
@@ -149,14 +149,15 @@
           </div>
         </div>
 
-        <!-- Bộ chọn bài học -->
+        <!-- Bộ chọn bài học & Nút chuyển bài nhanh -->
         <div class="lesson-selector-bar">
-          <label for="lesson-dropdown-select" style="font-size: 13px; font-weight: 600; color: #a6e22e;">
-            📚 Chọn Bài Học:
-          </label>
-          <select id="lesson-dropdown-select" class="lesson-select-dropdown" aria-label="Chọn bài học Python">
-            <!-- Tự động điền bởi app.js -->
-          </select>
+          <button class="btn-lesson-nav-icon" id="btn-prev-lesson-top" title="Bài học trước (hoặc vuốt phải)">◀</button>
+          <div class="lesson-select-wrapper">
+            <select id="lesson-dropdown-select" class="lesson-select-dropdown" aria-label="Chọn bài học Python">
+              <!-- Tự động điền bởi app.js -->
+            </select>
+          </div>
+          <button class="btn-lesson-nav-icon" id="btn-next-lesson-top" title="Bài học tiếp theo (hoặc vuốt trái)">▶</button>
         </div>
 
         <!-- Nội dung bài học (Markdown) -->
@@ -174,6 +175,24 @@
         <!-- Khối thử thách thực hành -->
         <div id="lesson-practice-container" class="practice-card">
           <!-- Thử thách thực hành render tại đây -->
+        </div>
+
+        <!-- Thanh điều hướng chuyển bài học dưới đáy trang -->
+        <div class="lesson-bottom-nav-card" id="lesson-bottom-nav-card">
+          <button class="btn-lesson-bottom-nav" id="btn-prev-lesson-btm" type="button">
+            <span>◀</span> Bài Trước
+          </button>
+          <div class="lesson-pagination-pill" id="lesson-pagination-pill">
+            <span id="lesson-page-curr">Bài 1</span> / <span id="lesson-page-total">10</span>
+          </div>
+          <button class="btn-lesson-bottom-nav btn-next-highlight" id="btn-next-lesson-btm" type="button">
+            Bài Tiếp <span>▶</span>
+          </button>
+        </div>
+
+        <!-- Gợi ý cử chỉ vuốt ngón tay -->
+        <div class="swipe-hint-bar">
+          <span>👈 <strong>Vuốt trái</strong>: Bài tiếp theo &bull; <strong>Vuốt phải</strong>: Bài trước 👉</span>
         </div>
       </div>
     </section>

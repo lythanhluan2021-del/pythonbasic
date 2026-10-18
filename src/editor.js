@@ -401,6 +401,13 @@ export class SublimeEditor {
     return current;
   }
 
+  setFontSize(size) {
+    if (!this.editor) return;
+    const px = typeof size === 'number' ? `${size}px` : size;
+    this.editor.setFontSize(px);
+    localStorage.setItem('pysublime_mobile_font_size', parseInt(size, 10));
+  }
+
   getFontSizeNumber() {
     if (!this.editor) return 16;
     return parseInt(this.editor.getFontSize(), 10) || 16;

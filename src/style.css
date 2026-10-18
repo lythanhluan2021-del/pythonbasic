@@ -1641,32 +1641,152 @@ body.simplified-header #btn-open-drive-modal {
   }
 
   .lesson-selector-bar {
-    padding: 12px;
-    flex-direction: column;
-    align-items: stretch;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
     gap: 8px;
     border-radius: 12px;
     margin-bottom: 12px;
+    background: #141512;
+    border: 1px solid var(--sublime-border);
+  }
+
+  .lesson-select-wrapper {
+    flex: 1;
+    min-width: 0;
   }
 
   .lesson-select-dropdown {
     width: 100%;
-    height: 44px;
-    font-size: 14.5px;
+    height: 42px;
+    font-size: 14px;
     border-radius: 8px;
     font-weight: 600;
+    background: #1a1b17;
+    border: 1px solid var(--sublime-border);
+    color: var(--monokai-yellow);
+    padding: 0 8px;
   }
 
+  .btn-lesson-nav-icon {
+    width: 42px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--sublime-border);
+    color: var(--monokai-cyan);
+    border-radius: 8px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+  }
+
+  .btn-lesson-nav-icon:active {
+    background: var(--monokai-cyan);
+    color: #141512;
+    transform: scale(0.92);
+  }
+
+  /* KHỐI NỘI DUNG LÝ THUYẾT: CỠ CHỮ THAY ĐỔI THEO A- / A+ */
   .lesson-content-card {
     padding: 16px 14px;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: var(--theory-body-size, 16px);
     line-height: 1.65;
+    background: var(--sublime-bg);
+    border: 1px solid var(--sublime-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
-  .lesson-content-card h1 { font-size: 20px; line-height: 1.35; margin-bottom: 12px; }
-  .lesson-content-card h2 { font-size: 17.5px; line-height: 1.35; margin: 18px 0 8px; color: var(--monokai-orange); }
-  .lesson-content-card h3 { font-size: 16px; margin: 14px 0 6px; color: var(--monokai-yellow); }
+  .lesson-content-card p,
+  .lesson-content-card li {
+    font-size: var(--theory-body-size, 16px);
+    line-height: 1.65;
+    color: #d6d6d0;
+  }
+
+  .lesson-content-card h1 { 
+    font-size: calc(var(--theory-body-size, 16px) * 1.35); 
+    line-height: 1.35; 
+    margin-bottom: 12px; 
+    color: var(--monokai-orange);
+    border-bottom: 1px solid var(--sublime-border);
+    padding-bottom: 8px;
+  }
+  .lesson-content-card h2 { 
+    font-size: calc(var(--theory-body-size, 16px) * 1.2); 
+    line-height: 1.35; 
+    margin: 18px 0 8px; 
+    color: var(--monokai-orange); 
+  }
+  .lesson-content-card h3 { 
+    font-size: calc(var(--theory-body-size, 16px) * 1.1); 
+    margin: 14px 0 6px; 
+    color: var(--monokai-cyan); 
+  }
+
+  /* KHỐI CODE TRONG LÝ THUYẾT: CUỘN NGANG MƯỢT MÀ, KHÔNG BỊ VỠ DÒNG */
+  .theory-code-container {
+    background: #121310;
+    border: 1px solid #333;
+    border-radius: 10px;
+    margin: 14px 0;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .theory-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: #191a16;
+    border-bottom: 1px solid #282923;
+    font-size: 11.5px;
+    color: var(--monokai-gray);
+    font-family: var(--font-code);
+  }
+
+  .code-scroll-hint {
+    font-size: 11px;
+    color: var(--monokai-orange);
+    font-style: italic;
+  }
+
+  .theory-code-block {
+    margin: 0;
+    padding: 12px 14px;
+    font-family: var(--font-code);
+    font-size: var(--theory-body-size, 15px) !important;
+    line-height: 1.55;
+    color: #a6e22e;
+    overflow-x: auto !important;
+    white-space: pre !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #121310;
+  }
+
+  .theory-code-block code {
+    font-family: inherit;
+    color: #a6e22e;
+    white-space: pre !important;
+  }
+
+  .inline-code {
+    color: var(--monokai-orange);
+    background: #141512;
+    border: 1px solid rgba(253, 151, 31, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-code);
+    font-size: 0.9em;
+  }
 
   .code-preview-box {
     margin: 14px 0;
@@ -1688,14 +1808,18 @@ body.simplified-header #btn-open-drive-modal {
 
   .code-snippet-pre {
     padding: 12px 10px;
-    font-size: 14px;
+    font-size: var(--theory-body-size, 14.5px);
     line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+    -webkit-overflow-scrolling: touch;
   }
 
   .practice-card {
     padding: 16px 14px;
     border-radius: 12px;
     margin-top: 14px;
+    font-size: var(--theory-body-size, 15px);
   }
 
   .btn-start-practice {
@@ -1710,6 +1834,73 @@ body.simplified-header #btn-open-drive-modal {
     justify-content: center;
     gap: 8px;
     box-shadow: 0 4px 14px rgba(166, 226, 46, 0.4);
+    touch-action: manipulation;
+  }
+
+  /* THANH ĐIỀU HƯỚNG BÀI HỌC DƯỚI ĐÁY TRANG LÝ THUYẾT */
+  .lesson-bottom-nav-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #171814;
+    border: 1px solid var(--sublime-border);
+    border-radius: 14px;
+    padding: 10px;
+    margin-top: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-lesson-bottom-nav {
+    flex: 1;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--sublime-border);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    touch-action: manipulation;
+  }
+
+  .btn-lesson-bottom-nav:active {
+    transform: scale(0.95);
+  }
+
+  .btn-lesson-bottom-nav.btn-next-highlight {
+    background: linear-gradient(135deg, rgba(166, 226, 46, 0.22), rgba(102, 217, 239, 0.22));
+    border-color: var(--monokai-green);
+    color: var(--monokai-green);
+  }
+
+  .btn-lesson-bottom-nav.btn-next-highlight:active {
+    background: var(--monokai-green);
+    color: #141512;
+  }
+
+  .lesson-pagination-pill {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--monokai-yellow);
+    padding: 6px 12px;
+    background: rgba(230, 219, 116, 0.12);
+    border: 1px solid rgba(230, 219, 116, 0.3);
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .swipe-hint-bar {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--monokai-gray);
+    padding: 10px 4px 6px;
+    user-select: none;
   }
 
   /* ========================================================

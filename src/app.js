@@ -347,16 +347,31 @@ class PySublimeApp {
     // === MODAL EVENTS ===
     this.bindModalEvents();
 
-    // === TERMINAL CONTROLS ===
-    const btnClearTerm = document.getElementById('btn-clear-terminal');
-    if (btnClearTerm) {
-      btnClearTerm.addEventListener('click', () => {
-        const screen = document.getElementById('terminal-screen');
-        if (screen) screen.innerHTML = '';
-        const drawerScreen = document.getElementById('drawer-terminal-screen');
-        if (drawerScreen) drawerScreen.innerHTML = '';
-      });
-    }
+    // === TERMINAL CONTROLS (XÓA KẾT QUẢ CẢ TRÊN WEB VÀ MOBILE DRAWER) ===
+    const handleClearTerminal = () => {
+      const screen = document.getElementById('terminal-screen');
+      if (screen) {
+        screen.innerHTML = '<span class="term-line-info">=== Đã xóa màn hình console ===</span>\n';
+      }
+      const drawerScreen = document.getElementById('drawer-terminal-screen');
+      if (drawerScreen) {
+        drawerScreen.innerHTML = '<span class="term-line-info">=== Đã xóa màn hình console ===</span>\n';
+      }
+      const testResults = document.getElementById('test-results-panel');
+      if (testResults) {
+        testResults.innerHTML = '';
+        testResults.style.display = 'none';
+      }
+      const drawerResults = document.getElementById('drawer-results-box');
+      if (drawerResults) {
+        drawerResults.innerHTML = '';
+        drawerResults.style.display = 'none';
+      }
+      this.showToast('🧹 Đã xóa sạch kết quả console');
+    };
+
+    document.getElementById('btn-clear-terminal')?.addEventListener('click', handleClearTerminal);
+    document.getElementById('btn-drawer-clear')?.addEventListener('click', handleClearTerminal);
   }
 
   showToast(msg) {

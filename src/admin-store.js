@@ -178,27 +178,33 @@ class AdminStore {
   getSchoolStudents() {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.SCHOOL_STUDENTS);
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Tự động dọn sạch nếu là mock data mẫu cũ
+          const isOldMock = parsed.length > 0 && parsed.every(s => 
+            s.username.startsWith('HS10A1_0') && ['Nguyễn Văn An', 'Trần Thị Bình', 'Lê Hoàng Cường', 'Phạm Minh Đức', 'Đặng Ngọc Hoa'].includes(s.fullName)
+          );
+          if (isOldMock) {
+            localStorage.setItem(STORAGE_KEYS.SCHOOL_STUDENTS, JSON.stringify([]));
+            return [];
+          }
+          return parsed;
+        }
       }
     } catch (e) {}
 
-    // Dữ liệu mẫu ban đầu cho lớp 10A1
-    const defaultStudents = [
-      { username: 'HS10A1_01', fullName: 'Nguyễn Văn An', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
-      { username: 'HS10A1_02', fullName: 'Trần Thị Bình', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
-      { username: 'HS10A1_03', fullName: 'Lê Hoàng Cường', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
-      { username: 'HS10A1_04', fullName: 'Phạm Minh Đức', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null },
-      { username: 'HS10A1_05', fullName: 'Đặng Ngọc Hoa', className: '10A1', password: '123', status: 'active', createdAt: new Date().toISOString(), lastLogin: null }
-    ];
-    this.saveSchoolStudents(defaultStudents);
-    return defaultStudents;
+    return [];
   }
 
   saveSchoolStudents(students) {
     localStorage.setItem(STORAGE_KEYS.SCHOOL_STUDENTS, JSON.stringify(students));
     window.dispatchEvent(new CustomEvent('pysublime_users_changed', { detail: { type: 'school', count: students.length } }));
+  }
+
+  clearAllSchoolStudents() {
+    this.saveSchoolStudents([]);
+    return 0;
   }
 
   addSchoolStudent(student) {

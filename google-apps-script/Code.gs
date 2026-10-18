@@ -495,9 +495,6 @@ function getOrCreateSpreadsheet() {
   var s1 = ss.getActiveSheet();
   s1.setName("Tai_Khoan_Hoc_Sinh");
   s1.appendRow(["Mã Học Sinh / Tên Đăng Nhập", "Họ Và Tên", "Lớp", "Mật Khẩu", "Trạng Thái", "Lần Đăng Nhập Cuối"]);
-  s1.appendRow(["HS10A1_01", "Nguyễn Văn An", "10A1", "123", "Hoạt động", ""]);
-  s1.appendRow(["HS10A1_02", "Trần Thị Bình", "10A1", "123", "Hoạt động", ""]);
-  s1.appendRow(["HS10A1_03", "Lê Hoàng Cường", "10A1", "123", "Hoạt động", ""]);
   s1.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#d9ead3");
 
   // Tab 2: Tài khoản Google

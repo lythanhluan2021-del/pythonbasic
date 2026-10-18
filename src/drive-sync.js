@@ -25,14 +25,23 @@ export class DriveSyncManager {
   }
 
   loadStudentProfile() {
+    const user = adminStore.getCurrentUser();
+    if (user) {
+      return {
+        studentId: user.username || user.email,
+        fullName: user.fullName,
+        className: user.className || (user.type === 'google' ? 'Google Account' : '')
+      };
+    }
+
     const raw = localStorage.getItem(STORAGE_KEYS.STUDENT_PROFILE);
     if (raw) {
       try { return JSON.parse(raw); } catch (e) {}
     }
     return {
-      studentId: 'HS-' + Math.floor(1000 + Math.random() * 9000),
-      fullName: 'Học Sinh Mới',
-      className: 'Lớp Tự Học'
+      studentId: 'Khách',
+      fullName: 'Khách Tự Do',
+      className: 'Tự do'
     };
   }
 

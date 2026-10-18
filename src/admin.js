@@ -668,10 +668,19 @@ class AdminController {
     });
 
     if (filtered.length === 0) {
+      const isTotalEmpty = list.length === 0;
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
-            Không tìm thấy tài khoản học sinh nào phù hợp.
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 36px 20px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📂</div>
+            <div style="font-weight: 700; font-size: 15px; color: var(--text-main); margin-bottom: 6px;">
+              ${isTotalEmpty ? 'Danh Sách Học Sinh Đang Trống' : 'Không Tìm Thấy Học Sinh Phù Hợp'}
+            </div>
+            <div style="font-size: 13px; max-width: 460px; margin: 0 auto; line-height: 1.5;">
+              ${isTotalEmpty 
+                ? 'Thầy/Cô có thể bấm <strong>📥 Nhập Từ File</strong> để tải file danh sách của trường, hoặc dùng <strong>⚡ Tạo Hàng Loạt</strong> / <strong>➕ Thêm Học Sinh</strong>.'
+                : 'Thử tìm kiếm với từ khóa khác hoặc chuyển bộ lọc lớp về "Tất cả lớp".'}
+            </div>
           </td>
         </tr>
       `;
@@ -1036,6 +1045,20 @@ class AdminController {
       document.getElementById('modal-user-bulk')?.classList.add('show');
     });
     document.getElementById('btn-open-bulk-reset-modal')?.addEventListener('click', () => this.openBulkResetModal());
+
+    // Nút xóa toàn bộ học sinh
+    document.getElementById('btn-clear-school-students')?.addEventListener('click', () => {
+      const list = adminStore.getSchoolStudents();
+      if (list.length === 0) {
+        this.showToast("Danh sách học sinh hiện tại đã trống!");
+        return;
+      }
+      if (confirm(`Bạn có chắc chắn muốn xóa toàn bộ ${list.length} tài khoản học sinh không? Thao tác này sẽ dọn sạch danh sách để bạn tải lên danh sách học sinh của trường.`)) {
+        adminStore.clearAllSchoolStudents();
+        this.renderSchoolStudents();
+        this.showToast("Đã xóa sạch toàn bộ danh sách học sinh!");
+      }
+    });
 
     // Modal đóng
     document.getElementById('btn-close-user-single-modal')?.addEventListener('click', () => {

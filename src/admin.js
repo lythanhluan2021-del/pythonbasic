@@ -1129,7 +1129,19 @@ class AdminController {
     });
   }
 
-  // === PHÂN TÍCH FILE DANH SÁCH HỌC SINH (HỖ TRỢ EXCEL .XLSX, .XLS, CSV, JSON) ===
+  // === PHÂN TÍCH FILE DANH SÁCH HỌC SINH (HỖ TRỢ EXCEL .XLSX, .XLS, MOET CSDL, CSV, JSON) ===
+  normalizeText(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   parseUploadedStudentsFile(file) {
     return new Promise((resolve, reject) => {
       const fileName = file.name.toLowerCase();
@@ -1149,127 +1161,285 @@ class AdminController {
         return;
       }
 
-      // Xử lý file Excel (.xlsx, .xls) hoặc file bảng CSV / TXT
+      // Đọc file Excel (.xlsx, .xls) hoặc file bảng CSV / TXT
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const buffer = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(buffer, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          if (!firstSheetName) {
+          let workbook = null;
+
+          // Thử nạp workbook với các phương thức giải mã khác nhau
+          try {
+            workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+          } catch (err1) {
+            try {
+              const textContent = new TextDecoder('utf-8').decode(buffer);
+              workbook = XLSX.read(textContent, { type: 'string' });
+            } catch (err2) {
+              try {
+                const textWin = new TextDecoder('windows-1258').decode(buffer);
+                workbook = XLSX.read(textWin, { type: 'string' });
+              } catch (err3) {
+                throw new Error("Không thể giải mã file Excel này: " + err1.message);
+              }
+            }
+          }
+
+          if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
             throw new Error("File Excel không có trang tính (sheet) nào!");
           }
-          const worksheet = workbook.Sheets[firstSheetName];
-          const rawGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-          if (!rawGrid || rawGrid.length === 0) {
-            throw new Error("File Excel không có dữ liệu!");
-          }
+          const allParsedStudents = [];
 
-          // Tự động nhận diện dòng tiêu đề (Header row)
-          let headerRowIdx = -1;
-          const colMap = {
-            username: -1,
-            name: -1,
-            ho: -1,
-            ten: -1,
-            class: -1,
-            password: -1,
-            stt: -1
-          };
+          // Duyệt qua tất cả các trang tính trong file Excel (hỗ trợ file nhiều lớp)
+          for (const sheetName of workbook.SheetNames) {
+            const worksheet = workbook.Sheets[sheetName];
+            if (!worksheet) continue;
 
-          for (let r = 0; r < Math.min(rawGrid.length, 12); r++) {
-            const row = rawGrid[r].map(c => String(c).toLowerCase().trim());
-            const hasUsername = row.some(c => c.includes('mã') || c.includes('username') || c.includes('đăng nhập') || c.includes('tài khoản'));
-            const hasName = row.some(c => c.includes('họ') || c.includes('tên') || c.includes('fullname') || c.includes('name'));
+            const rawGrid = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+            if (!rawGrid || rawGrid.length < 2) continue;
 
-            if (hasUsername || hasName) {
-              headerRowIdx = r;
-              row.forEach((cell, idx) => {
-                if (cell.includes('mã') || cell.includes('username') || cell.includes('đăng nhập') || cell.includes('tài khoản')) {
-                  if (colMap.username === -1) colMap.username = idx;
-                } else if (cell === 'họ và tên' || cell === 'họ tên' || cell === 'fullname' || cell === 'tên học sinh' || cell === 'họ và tên học sinh') {
-                  if (colMap.name === -1) colMap.name = idx;
-                } else if (cell === 'họ' || cell === 'họ đệm' || cell === 'họ lót') {
-                  if (colMap.ho === -1) colMap.ho = idx;
-                } else if (cell === 'tên') {
-                  if (colMap.ten === -1) colMap.ten = idx;
-                } else if (cell.includes('lớp') || cell.includes('class') || cell.includes('khóa')) {
-                  if (colMap.class === -1) colMap.class = idx;
-                } else if (cell.includes('mật khẩu') || cell.includes('password') || cell.includes('pass')) {
-                  if (colMap.password === -1) colMap.password = idx;
-                } else if (cell === 'stt' || cell.includes('thứ tự')) {
-                  if (colMap.stt === -1) colMap.stt = idx;
+            // 1. Tìm lớp học mặc định từ tên Sheet hoặc các dòng tiêu đề trên cùng
+            let defaultClass = '';
+            const sheetClassMatch = sheetName.match(/([0-9]{1,2}\s*[a-zA-Z0-9_\-\.]+)/);
+            if (sheetClassMatch) {
+              defaultClass = sheetClassMatch[1].replace(/\s+/g, '').toUpperCase();
+            }
+
+            for (let r = 0; r < Math.min(rawGrid.length, 15); r++) {
+              const rowText = rawGrid[r].map(c => String(c)).join(' ');
+              const classMatch = rowText.match(/l[ớo]p\s*[:\-\s]?\s*([0-9]{1,2}\s*[a-zA-Z0-9_\-\.]+)/i);
+              if (classMatch) {
+                defaultClass = classMatch[1].replace(/\s+/g, '').toUpperCase();
+                break;
+              }
+            }
+
+            // 2. Chấm điểm tìm dòng tiêu đề thực sự (Header Row)
+            let bestHeaderIdx = -1;
+            let bestScore = 0;
+            let bestColMap = {
+              username: -1,
+              name: -1,
+              ho: -1,
+              ten: -1,
+              class: -1,
+              password: -1,
+              stt: -1
+            };
+
+            const maxScanRows = Math.min(rawGrid.length, 30);
+            for (let r = 0; r < maxScanRows; r++) {
+              const row = rawGrid[r];
+              if (!row || !Array.isArray(row)) continue;
+
+              const currentMap = {
+                username: -1,
+                name: -1,
+                ho: -1,
+                ten: -1,
+                class: -1,
+                password: -1,
+                stt: -1
+              };
+              let score = 0;
+
+              for (let c = 0; c < row.length; c++) {
+                const norm = this.normalizeText(row[c]);
+                if (!norm) continue;
+
+                // Cột Mã định danh / Mã học sinh (MOET / CSDL Ngành / vnEdu / SMAS)
+                if (norm.includes('ma dinh danh') || norm.includes('ma moet') || norm.includes('ma hoc sinh') || 
+                    norm.includes('ma hs') || norm.includes('ma so') || norm.includes('username') || 
+                    norm.includes('tai khoan') || norm.includes('ma dd') || norm === 'ma' || norm === 'id' ||
+                    norm.includes('dinh danh') || norm.includes('csdl') || norm.includes('so dinh danh') ||
+                    norm.includes('cccd') || norm.includes('so cccd')) {
+                  if (currentMap.username === -1) {
+                    currentMap.username = c;
+                    score += 4;
+                  }
+                } 
+                // Cột Họ và tên gộp
+                else if (norm === 'ho va ten' || norm === 'ho ten' || norm.includes('ho va ten hoc sinh') || 
+                         norm.includes('ho ten hoc sinh') || norm === 'fullname') {
+                  if (currentMap.name === -1) {
+                    currentMap.name = c;
+                    score += 4;
+                  }
+                } 
+                // Cột Họ / Chữ đệm riêng (MOET chuẩn tách Họ và chữ đệm)
+                else if (norm === 'ho va chu dem' || norm === 'ho chu dem' || norm === 'ho va dem' || 
+                         norm === 'ho dem' || norm === 'ho lot' || norm === 'ho' || norm.includes('chu dem')) {
+                  if (currentMap.ho === -1) {
+                    currentMap.ho = c;
+                    score += 3;
+                  }
+                } 
+                // Cột Tên riêng
+                else if (norm === 'ten' || norm === 'ten hoc sinh' || norm === 'first name') {
+                  if (currentMap.ten === -1) {
+                    currentMap.ten = c;
+                    score += 3;
+                  }
+                } 
+                // Cột Lớp
+                else if (norm === 'lop' || norm.startsWith('lop ') || norm.includes('lop hoc') || 
+                         norm.includes('class') || norm === 'khoi') {
+                  if (currentMap.class === -1) {
+                    currentMap.class = c;
+                    score += 2;
+                  }
+                } 
+                // Cột Mật khẩu
+                else if (norm.includes('mat khau') || norm.includes('password') || norm === 'mk' || norm === 'pass') {
+                  if (currentMap.password === -1) {
+                    currentMap.password = c;
+                    score += 2;
+                  }
+                } 
+                // Cột STT
+                else if (norm === 'stt' || norm === 'so tt' || norm === 'so thu tu' || norm === 'thu tu' || norm === 'no') {
+                  if (currentMap.stt === -1) {
+                    currentMap.stt = c;
+                    score += 2;
+                  }
                 }
+                // Các cột phụ của MOET (ngày sinh, giới tính) giúp khẳng định dòng tiêu đề
+                else if (norm.includes('ngay sinh') || norm.includes('nam sinh') || norm.includes('gioi tinh') || norm.includes('trang thai') || norm.includes('dan toc')) {
+                  score += 1;
+                }
+              }
+
+              // Dòng tiêu đề chuẩn cần đạt ít nhất 3 điểm và có ít nhất 1 trường nhận dạng
+              if (score > bestScore && (currentMap.name !== -1 || (currentMap.ho !== -1 && currentMap.ten !== -1) || currentMap.username !== -1 || currentMap.ho !== -1 || currentMap.ten !== -1)) {
+                bestScore = score;
+                bestHeaderIdx = r;
+                bestColMap = currentMap;
+              }
+            }
+
+            // Kiểm tra xem dòng kế tiếp có phải là dòng tiêu đề phụ (Merged cell: Dòng 1 ghi Họ và tên gộp, Dòng 2 ghi Họ đệm - Tên)
+            let isSubHeader = false;
+            if (bestHeaderIdx !== -1 && bestHeaderIdx + 1 < rawGrid.length) {
+              const nextRow = rawGrid[bestHeaderIdx + 1];
+              if (Array.isArray(nextRow)) {
+                for (let c = 0; c < nextRow.length; c++) {
+                  const nextNorm = this.normalizeText(nextRow[c]);
+                  if (!nextNorm) continue;
+                  if (nextNorm.includes('chu dem') || nextNorm.includes('ho dem') || nextNorm === 'ho') {
+                    bestColMap.ho = c;
+                    isSubHeader = true;
+                  } else if (nextNorm === 'ten' || nextNorm === 'ten hoc sinh') {
+                    bestColMap.ten = c;
+                    isSubHeader = true;
+                  }
+                }
+              }
+            }
+
+            console.log(`[Excel Parser] Sheet "${sheetName}": Best Header Row = ${bestHeaderIdx} (isSubHeader=${isSubHeader}), Score = ${bestScore}`, bestColMap);
+
+            const startRow = bestHeaderIdx !== -1 ? (isSubHeader ? bestHeaderIdx + 2 : bestHeaderIdx + 1) : 0;
+
+            for (let r = startRow; r < rawGrid.length; r++) {
+              const row = rawGrid[r];
+              if (!row || !Array.isArray(row) || row.length === 0) continue;
+
+              let username = '';
+              let fullName = '';
+              let className = defaultClass || '10A1';
+              let password = '123';
+              let stt = r - startRow + 1;
+
+              if (bestHeaderIdx !== -1) {
+                // Đọc Mã học sinh / Mã MOET
+                if (bestColMap.username !== -1 && row[bestColMap.username] !== undefined && row[bestColMap.username] !== '') {
+                  username = String(row[bestColMap.username]).trim();
+                }
+
+                // Đọc Họ và tên (gộp hoặc tách)
+                if (bestColMap.name !== -1 && row[bestColMap.name]) {
+                  fullName = String(row[bestColMap.name]).trim();
+                  // Kiểm tra trường hợp ô header "Họ và tên" merge 2 cột: Cột hiện tại là Họ đệm, Cột kế tiếp là Tên
+                  if (bestColMap.ten === -1 && bestColMap.name + 1 < row.length) {
+                    const nextVal = String(row[bestColMap.name + 1] || '').trim();
+                    if (nextVal && !nextVal.includes('/') && !nextVal.includes('-') && !/^\d+$/.test(nextVal)) {
+                      const nextNorm = this.normalizeText(nextVal);
+                      if (!['nam', 'nu', 'nam/nu'].includes(nextNorm) && nextVal.split(/\s+/).length <= 2) {
+                        fullName = `${fullName} ${nextVal}`.trim();
+                      }
+                    }
+                  }
+                } else if (bestColMap.ho !== -1 || bestColMap.ten !== -1) {
+                  const ho = bestColMap.ho !== -1 ? String(row[bestColMap.ho] || '').trim() : '';
+                  const ten = bestColMap.ten !== -1 ? String(row[bestColMap.ten] || '').trim() : '';
+                  fullName = `${ho} ${ten}`.trim();
+                }
+
+                // Đọc Lớp
+                if (bestColMap.class !== -1 && row[bestColMap.class]) {
+                  let cls = String(row[bestColMap.class]).trim().toUpperCase();
+                  cls = cls.replace(/^L[ỚO]P\s*[:\-\s]*/i, '');
+                  if (cls) className = cls;
+                }
+
+                // Đọc Mật khẩu
+                if (bestColMap.password !== -1 && row[bestColMap.password]) {
+                  password = String(row[bestColMap.password]).trim();
+                }
+
+                // Đọc STT
+                if (bestColMap.stt !== -1 && row[bestColMap.stt] !== undefined && row[bestColMap.stt] !== '') {
+                  const num = parseInt(row[bestColMap.stt], 10);
+                  if (!isNaN(num)) stt = num;
+                }
+              } else {
+                // Dự phòng vị trí cột khi không tìm thấy header
+                username = String(row[0] || '').trim();
+                fullName = String(row[1] || '').trim();
+                className = String(row[2] || defaultClass || '10A1').trim();
+                if (row[3]) password = String(row[3]).trim();
+              }
+
+              // Bỏ qua dòng trống
+              if (!username && !fullName) continue;
+
+              // Bỏ qua các dòng footer tổng kết cuối bảng (Tổng số, Người lập, Hiệu trưởng...)
+              const normFull = this.normalizeText(fullName);
+              const normUser = this.normalizeText(username);
+              if (normFull.includes('tong so') || normFull.includes('hieu truong') || 
+                  normFull.includes('nguoi lap') || normFull.includes('giao vien') ||
+                  normUser.includes('tong so') || normUser.includes('hieu truong')) {
+                continue;
+              }
+
+              // Nếu họ tên chỉ toàn số hoặc quá ngắn, bỏ qua (không phải học sinh)
+              if (/^[0-9\.\-\s]+$/.test(fullName) && !username) continue;
+
+              // Nếu thiếu username nhưng có họ tên, tự tạo username theo cú pháp HS{Lớp}_{STT}
+              if (!username && fullName) {
+                const sttStr = stt < 10 ? `0${stt}` : `${stt}`;
+                username = `HS${className.replace(/\s+/g, '')}_${sttStr}`;
+              }
+
+              if (!fullName && username) {
+                fullName = username;
+              }
+
+              // Chuẩn hóa Username: viết hoa, loại bỏ khoảng trắng
+              const cleanUsername = username.replace(/\s+/g, '').toUpperCase();
+
+              allParsedStudents.push({
+                username: cleanUsername,
+                fullName: fullName,
+                className: className || '10A1',
+                password: password || '123'
               });
-              break;
             }
           }
 
-          const parsedStudents = [];
-          const startRow = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
-
-          for (let r = startRow; r < rawGrid.length; r++) {
-            const row = rawGrid[r];
-            if (!row || row.length === 0) continue;
-
-            let username = '';
-            let fullName = '';
-            let className = '';
-            let password = '123';
-
-            if (headerRowIdx !== -1) {
-              if (colMap.username !== -1 && row[colMap.username] !== undefined && row[colMap.username] !== '') {
-                username = String(row[colMap.username]).trim();
-              }
-              if (colMap.name !== -1 && row[colMap.name]) {
-                fullName = String(row[colMap.name]).trim();
-              } else if (colMap.ho !== -1 || colMap.ten !== -1) {
-                const ho = colMap.ho !== -1 ? String(row[colMap.ho] || '').trim() : '';
-                const ten = colMap.ten !== -1 ? String(row[colMap.ten] || '').trim() : '';
-                fullName = `${ho} ${ten}`.trim();
-              }
-              if (colMap.class !== -1 && row[colMap.class]) {
-                className = String(row[colMap.class]).trim();
-              }
-              if (colMap.password !== -1 && row[colMap.password]) {
-                password = String(row[colMap.password]).trim();
-              }
-              if (!username && colMap.stt !== -1 && row[colMap.stt] !== undefined && row[colMap.stt] !== '') {
-                const sttNum = parseInt(row[colMap.stt], 10);
-                const sttStr = sttNum < 10 ? `0${sttNum}` : `${sttNum}`;
-                username = `HS${(className || '10A1').replace(/\s+/g, '')}_${sttStr}`;
-              }
-            } else {
-              // Dự phòng vị trí cột khi không có tiêu đề
-              username = String(row[0] || '').trim();
-              fullName = String(row[1] || '').trim();
-              className = String(row[2] || '').trim();
-              if (row[3]) password = String(row[3]).trim();
-            }
-
-            // Bỏ qua dòng trống
-            if (!username && !fullName) continue;
-
-            // Nếu thiếu username nhưng có tên, tự tạo username
-            if (!username && fullName) {
-              const stt = (parsedStudents.length + 1) < 10 ? `0${parsedStudents.length + 1}` : `${parsedStudents.length + 1}`;
-              username = `HS${(className || '10A1').replace(/\s+/g, '')}_${stt}`;
-            }
-
-            if (!fullName && username) {
-              fullName = username;
-            }
-
-            parsedStudents.push({
-              username: username.toUpperCase(),
-              fullName: fullName,
-              className: className || '10A1',
-              password: password || '123'
-            });
-          }
-
-          resolve(parsedStudents);
+          console.log(`[Excel Parser] Tổng cộng trích xuất được: ${allParsedStudents.length} học sinh`, allParsedStudents);
+          resolve(allParsedStudents);
         } catch (err) {
           reject(new Error("Lỗi khi đọc file Excel: " + err.message));
         }

@@ -1481,49 +1481,37 @@ body.simplified-header #btn-open-drive-modal {
     transform: scale(0.92);
   }
 
-  .btn-user-pill {
-    max-width: 140px;
-    font-size: 11.5px;
-    padding: 4px 8px;
-    border-radius: 16px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(255, 255, 255, 0.06);
+  /* ẨN HOÀN TOÀN TÀI KHOẢN TRÊN HEADER DI ĐỘNG (ĐÃ CHUYỂN XUỐNG TAB ĐÁY THEO YÊU CẦU) */
+  #user-account-wrapper {
+    display: none !important;
   }
 
-  #user-pill-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100px;
+  .btn-user-pill {
+    display: none !important;
   }
 
   .user-dropdown-menu {
-    position: fixed !important;
-    top: 50px !important;
-    right: 8px !important;
-    width: calc(100vw - 16px) !important;
-    max-width: 320px !important;
-    z-index: 1000 !important;
+    display: none !important;
   }
 
   /* ========================================================
-     THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH (BOTTOM NAVIGATION BAR)
+     THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH CHUẨN NATIVE APP
+     (NẰM TRONG LUỒNG FLEX, KHÔNG DÙNG FIXED ĐỂ TRÁNH CHE KHUẤT PHÍM)
      ======================================================== */
   .mobile-bottom-nav {
     display: flex !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    flex: 0 0 calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
     background: #141512 !important;
-    border-top: 1px solid var(--sublime-border) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
     z-index: 800 !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.7) !important;
     align-items: center !important;
     justify-content: space-around !important;
   }
@@ -1543,6 +1531,7 @@ body.simplified-header #btn-open-drive-modal {
     position: relative;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .bnav-icon {
@@ -1586,6 +1575,13 @@ body.simplified-header #btn-open-drive-modal {
     transform: scale(1.15) translateY(-1px);
   }
 
+  .bnav-tab-btn[data-view="account"].active {
+    color: var(--monokai-purple);
+  }
+  .bnav-tab-btn[data-view="account"].active .bnav-icon {
+    transform: scale(1.15) translateY(-1px);
+  }
+
   .bnav-badge {
     position: absolute;
     top: 6px;
@@ -1597,13 +1593,14 @@ body.simplified-header #btn-open-drive-modal {
     box-shadow: 0 0 8px var(--monokai-pink);
   }
 
-  /* KHUNG WORKSPACE: Chiếm trọn màn hình, chừa đáy cho Bottom Nav */
+  /* KHUNG WORKSPACE: Chiếm trọn khoảng trống ở giữa header và bottom nav */
   .workspace-container {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    height: calc(100vh - 46px - 58px - env(safe-area-inset-bottom, 0px)) !important;
-    height: calc(100dvh - 46px - 58px - env(safe-area-inset-bottom, 0px)) !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
     overflow: hidden !important;
     position: relative !important;
   }
@@ -1719,7 +1716,7 @@ body.simplified-header #btn-open-drive-modal {
      TAB 2: TRÌNH SOẠN THẢO SUBLIME TEXT IDE TRÊN MOBILE
      ======================================================== */
   .sublime-tabs-bar {
-    height: 48px;
+    height: 46px;
     padding: 0 8px;
     background: #171815;
     border-bottom: 1px solid var(--sublime-border);
@@ -1730,46 +1727,46 @@ body.simplified-header #btn-open-drive-modal {
     flex-shrink: 0;
   }
 
-  .sublime-tabs-container {
-    flex: 1;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: none;
-    display: flex;
-    gap: 4px;
-  }
-
-  .sublime-tab {
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 700;
-    border-radius: 8px 8px 0 0;
-    display: inline-flex;
+  .mobile-file-badge {
+    display: inline-flex !important;
     align-items: center;
     gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--sublime-border);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--monokai-green);
+    font-family: var(--font-code);
+  }
+
+  .sublime-tabs-container {
+    display: none !important;
   }
 
   .tab-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-shrink: 0;
   }
 
-  /* NÚT THAO TÁC CHÍNH TRÊN MOBILE: TO BẢN & SÁNG RÕ */
+  /* NÚT THAO TÁC CHÍNH TRÊN MOBILE: RỘNG RÃI & RÕ RÀNG */
   .btn-action-toolbar {
     height: 38px;
-    padding: 0 14px;
+    padding: 0 12px;
     font-size: 13px;
     font-weight: 800;
     border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
     border: none;
+    touch-action: manipulation;
   }
 
   .btn-action-toolbar:active {
@@ -1789,7 +1786,7 @@ body.simplified-header #btn-open-drive-modal {
   }
 
   .btn-reset-code {
-    width: 36px;
+    width: 38px;
     height: 38px;
     padding: 0;
     background: rgba(255, 255, 255, 0.06);
@@ -1797,20 +1794,27 @@ body.simplified-header #btn-open-drive-modal {
     color: var(--monokai-fg);
     border-radius: 8px;
     font-size: 15px;
-  }
-  .btn-reset-code span:last-child {
-    display: none; /* Chỉ hiện icon xoay trên mobile */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* KHUNG ACE EDITOR: CỠ CHỮ TO 16PX CHỐNG ZOOM IOS */
+  /* KHUNG ACE EDITOR: CỠ CHỮ TO 16PX, TỰ ĐỘNG LẤP ĐẦY TOÀN BỘ KHÔNG GIAN CÒN LẠI */
   .sublime-editor-box {
-    flex: 1;
-    width: 100%;
-    height: calc(100% - 48px - 52px - 20px);
-    position: relative;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
   }
 
   #ace-editor-instance {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     font-size: 16px !important;
     line-height: 1.65 !important;
     font-family: var(--font-code) !important;
@@ -1820,12 +1824,14 @@ body.simplified-header #btn-open-drive-modal {
     font-size: 13.5px !important;
   }
 
-  /* BÀN PHÍM ẢO TRỢ LỰC PYTHON: PHÍM TO 42PX, PHÂN MÀU TRỰC QUAN */
+  /* BÀN PHÍM ẢO TRỢ LỰC PYTHON: LUÔN NỔI NGAY TRÊN THANH ĐIỀU HƯỚNG ĐÁY */
   .mobile-virtual-keyboard {
-    height: 52px;
-    padding: 5px 8px;
-    background: #121310;
-    border-top: 1px solid var(--sublime-border);
+    flex: 0 0 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 4px 8px;
+    background: #141512;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -1833,7 +1839,8 @@ body.simplified-header #btn-open-drive-modal {
     white-space: nowrap;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    flex-shrink: 0;
+    z-index: 70;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
   }
 
   .mobile-virtual-keyboard::-webkit-scrollbar {
@@ -1849,8 +1856,8 @@ body.simplified-header #btn-open-drive-modal {
   }
 
   .vk-btn {
-    min-width: 44px;
-    height: 42px;
+    min-width: 42px;
+    height: 38px;
     padding: 0 10px;
     font-size: 14.5px;
     font-weight: 600;
@@ -1866,6 +1873,7 @@ body.simplified-header #btn-open-drive-modal {
     user-select: none;
     transition: all 0.12s ease;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   .vk-btn:active {
@@ -1880,7 +1888,7 @@ body.simplified-header #btn-open-drive-modal {
     color: var(--monokai-orange) !important;
     font-weight: 900 !important;
     font-size: 18px !important;
-    min-width: 48px;
+    min-width: 46px;
   }
 
   /* Phím thụt dòng Tab */
@@ -1889,6 +1897,26 @@ body.simplified-header #btn-open-drive-modal {
     border-color: rgba(166, 226, 46, 0.45) !important;
     color: var(--monokai-green) !important;
     font-weight: 700 !important;
+  }
+
+  /* Phím Xuống Dòng Enter */
+  .vk-btn.vk-btn-enter {
+    background: rgba(102, 217, 239, 0.22) !important;
+    border-color: rgba(102, 217, 239, 0.5) !important;
+    color: var(--monokai-cyan) !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    min-width: 44px;
+  }
+
+  /* Phím Xóa Lùi Backspace */
+  .vk-btn.vk-btn-backspace {
+    background: rgba(249, 38, 114, 0.22) !important;
+    border-color: rgba(249, 38, 114, 0.5) !important;
+    color: var(--monokai-pink) !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    min-width: 44px;
   }
 
   /* Phím hàm thông dụng */
@@ -1941,18 +1969,10 @@ body.simplified-header #btn-open-drive-modal {
     color: var(--monokai-pink);
   }
 
+  /* Ẩn Status bar trên điện thoại để tiết kiệm 20px không gian cho code */
   .sublime-status-bar {
-    height: 20px;
-    padding: 0 8px;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #10110e;
-    color: var(--monokai-comment);
-    flex-shrink: 0;
+    display: none !important;
   }
-  .sublime-status-bar .status-right { display: none; }
 
   /* ========================================================
      TAB 3: TERMINAL & KẾT QUẢ CHẤM ĐIỂM TOÀN MÀN HÌNH
@@ -2137,6 +2157,225 @@ body.simplified-header #btn-open-drive-modal {
   .drawer-overlay.show {
     opacity: 1;
     pointer-events: auto;
+  }
+
+  /* ========================================================
+     TAB 4: TÀI KHOẢN HỌC SINH / ADMIN TRÊN DI ĐỘNG (PANEL ACCOUNT)
+     ======================================================== */
+  #panel-account {
+    padding: 16px 12px 36px;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    background: #171814;
+  }
+
+  .account-panel-container {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .account-profile-card {
+    background: linear-gradient(135deg, #22231e, #1a1b16);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 18px 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  .profile-header-visual {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 14px;
+  }
+
+  .profile-avatar-large {
+    width: 54px;
+    height: 54px;
+    background: rgba(174, 129, 255, 0.18);
+    border: 2px solid var(--monokai-purple);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+
+  .profile-titles {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .profile-full-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profile-role-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(166, 226, 46, 0.2);
+    color: var(--monokai-green);
+    border: 1px solid rgba(166, 226, 46, 0.4);
+  }
+
+  .profile-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .profile-detail-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .detail-label {
+    font-size: 11px;
+    color: var(--monokai-gray);
+  }
+
+  .detail-val {
+    font-size: 13.5px;
+    color: #fff;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .detail-val.highlight {
+    color: var(--monokai-orange);
+  }
+  .detail-val.xp {
+    color: var(--monokai-yellow);
+  }
+
+  .account-actions-card {
+    background: #1e1f1a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .card-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--monokai-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 4px 4px;
+  }
+
+  .acc-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    color: var(--monokai-fg);
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .acc-action-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0.98);
+  }
+
+  .acc-action-icon {
+    font-size: 20px;
+    width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .acc-action-texts {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .acc-action-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .acc-action-desc {
+    display: block;
+    font-size: 11.5px;
+    color: var(--monokai-gray);
+    margin-top: 1px;
+  }
+
+  .acc-action-arrow {
+    font-size: 14px;
+    color: var(--monokai-gray);
+  }
+
+  .account-logout-card {
+    margin-top: 6px;
+  }
+
+  .btn-logout-full {
+    width: 100%;
+    height: 50px;
+    background: linear-gradient(135deg, rgba(249, 38, 114, 0.25), rgba(249, 38, 114, 0.15));
+    border: 1.5px solid var(--monokai-pink);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(249, 38, 114, 0.25);
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn-logout-full:active {
+    transform: scale(0.97);
+    background: var(--monokai-pink);
+  }
+
+  .logout-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--monokai-comment);
+    margin-top: 8px;
   }
 }
 

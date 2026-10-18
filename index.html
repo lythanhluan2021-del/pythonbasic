@@ -184,18 +184,22 @@
       <section class="view-panel active" id="panel-ide">
         <!-- Sublime Tabs Header -->
         <div class="sublime-tabs-bar">
-          <div class="sublime-tabs-container" id="sublime-tabs-container">
-            <!-- Các tab main.py, bai_tap.py render tự động -->
+          <div class="mobile-file-badge" id="mobile-file-badge">
+            <span class="file-icon">🐍</span>
+            <span class="file-name" id="mobile-active-filename">main.py</span>
+          </div>
+          <div class="sublime-tabs-container desktop-only" id="sublime-tabs-container">
+            <!-- Các tab main.py, bai_tap.py render tự động trên desktop -->
           </div>
           <div class="tab-actions">
             <button class="btn-action-toolbar btn-reset-code" id="btn-reset-current-code" title="Đặt lại mã nguồn bài này về mẫu ban đầu">
-              <span>🔄</span> Đặt Lại
+              <span>🔄</span> <span class="btn-text desktop-only">Đặt Lại</span>
             </button>
             <button class="btn-action-toolbar btn-run-code" id="btn-run-code" title="Chạy code (Phím tắt F5 hoặc nút Run)">
-              <span>▶</span> Chạy Code
+              <span>▶</span> <span class="btn-text">Chạy Code</span>
             </button>
             <button class="btn-action-toolbar btn-submit-code" id="btn-submit-practice-direct" title="Chấm điểm bài tập thực hành">
-              <span>📝</span> Chấm Điểm
+              <span>📝</span> <span class="btn-text">Chấm Điểm</span>
             </button>
             <button class="btn-action-toolbar btn-toggle-term-btn desktop-only" id="btn-toggle-terminal-view" title="Ẩn/Mở Terminal">
               <span>📟</span> Console
@@ -210,16 +214,24 @@
 
         <!-- BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI DI ĐỘNG (NATIVE TOUCH TARGETS) -->
         <div class="mobile-virtual-keyboard" id="mobile-virtual-keyboard">
-          <!-- Nhóm cú pháp nhanh Python cho di động -->
+          <!-- Nhóm thao tác quan trọng nhất: Hai chấm, Tab, Xuống dòng, Xóa lùi, Di chuyển con trỏ -->
           <div class="vk-group">
             <button class="vk-btn vk-btn-colon" data-char=":" title="Dấu hai chấm (quan trọng nhất sau if/for/def)">:</button>
-            <button class="vk-btn vk-btn-indent" data-action="tab" title="Phím Tab thụt lề">Tab</button>
-            <button class="vk-btn vk-btn-indent" data-action="indent" title="Thụt dòng vào (Indent)">⇥</button>
-            <button class="vk-btn vk-btn-indent" data-action="outdent" title="Lùi dòng ra (Outdent)">⇤</button>
+            <button class="vk-btn vk-btn-indent" data-action="tab" title="Phím Tab thụt lề 4 space">Tab</button>
+            <button class="vk-btn vk-btn-enter" data-action="enter" title="Xuống dòng">↵</button>
+            <button class="vk-btn vk-btn-backspace" data-action="backspace" title="Xóa lùi">⌫</button>
+            <button class="vk-btn vk-btn-nav" data-action="nav-left" title="Sang trái 1 ký tự">◀</button>
+            <button class="vk-btn vk-btn-nav" data-action="nav-right" title="Sang phải 1 ký tự">▶</button>
+          </div>
+
+          <!-- Nhóm hàm & cú pháp thông dụng -->
+          <div class="vk-group">
             <button class="vk-btn vk-btn-func" data-snippet="print()" title="Hàm in print()">print()</button>
             <button class="vk-btn vk-btn-func" data-snippet="input()" title="Hàm nhập input()">input()</button>
             <button class="vk-btn vk-btn-kw" data-snippet="if " title="Câu lệnh if">if</button>
+            <button class="vk-btn vk-btn-kw" data-snippet="else:\n    " title="Câu lệnh else">else:</button>
             <button class="vk-btn vk-btn-kw" data-snippet="for " title="Vòng lặp for">for</button>
+            <button class="vk-btn vk-btn-kw" data-snippet="in " title="Từ khóa in">in</button>
             <button class="vk-btn vk-btn-kw" data-snippet="def " title="Định nghĩa hàm def">def</button>
             <button class="vk-btn vk-btn-comment" data-char="#" title="Dấu chú thích #">#</button>
           </div>
@@ -233,9 +245,10 @@
             <button class="vk-btn vk-btn-pair" data-char="{}" title="Cặp ngoặc nhọn { }">{ }</button>
           </div>
 
-          <!-- Nhóm toán tử số học & gán -->
+          <!-- Nhóm toán tử số học & so sánh -->
           <div class="vk-group">
             <button class="vk-btn vk-btn-op" data-char="=" title="Dấu gán =">=</button>
+            <button class="vk-btn vk-btn-op" data-char="==" title="So sánh bằng ==">==</button>
             <button class="vk-btn vk-btn-op" data-char="+" title="Cộng">+</button>
             <button class="vk-btn vk-btn-op" data-char="-" title="Trừ">-</button>
             <button class="vk-btn vk-btn-op" data-char="*" title="Nhân">*</button>
@@ -244,10 +257,10 @@
             <button class="vk-btn vk-btn-op" data-char="_" title="Gạch dưới _">_</button>
           </div>
 
-          <!-- Nhóm điều hướng con trỏ & Thao tác nhanh -->
+          <!-- Nhóm căn lề & hoàn tác -->
           <div class="vk-group">
-            <button class="vk-btn vk-btn-nav" data-action="nav-left" title="Sang trái 1 ký tự">◀</button>
-            <button class="vk-btn vk-btn-nav" data-action="nav-right" title="Sang phải 1 ký tự">▶</button>
+            <button class="vk-btn vk-btn-indent" data-action="indent" title="Thụt dòng vào (Indent)">⇥</button>
+            <button class="vk-btn vk-btn-indent" data-action="outdent" title="Lùi dòng ra (Outdent)">⇤</button>
             <button class="vk-btn vk-btn-action" data-action="autocomplete" title="Bật danh sách gợi ý nhắc lệnh Python">💡 Gợi ý</button>
             <button class="vk-btn vk-btn-action" data-action="undo" title="Hoàn tác">↩</button>
             <button class="vk-btn vk-btn-danger" data-action="clear" title="Xóa hết code">🧹</button>
@@ -302,6 +315,100 @@
       </section>
     </div>
 
+    <!-- === VIEW 4: TÀI KHOẢN HỌC SINH / ADMIN TRÊN DI ĐỘNG & NATIVE APP === -->
+    <section class="view-panel" id="panel-account">
+      <div class="account-panel-container">
+        <!-- Thẻ hồ sơ cá nhân -->
+        <div class="account-profile-card">
+          <div class="profile-header-visual">
+            <div class="profile-avatar-large" id="mobile-acc-avatar">🎓</div>
+            <div class="profile-titles">
+              <h2 class="profile-full-name" id="mobile-acc-name">Đang tải...</h2>
+              <span class="profile-role-tag" id="mobile-acc-role">Học Sinh</span>
+            </div>
+          </div>
+
+          <div class="profile-details-grid">
+            <div class="profile-detail-item" id="mobile-acc-class-box">
+              <span class="detail-label">Lớp:</span>
+              <strong class="detail-val" id="mobile-acc-class">10A1</strong>
+            </div>
+            <div class="profile-detail-item" id="mobile-acc-id-box">
+              <span class="detail-label">Mã tài khoản:</span>
+              <code class="detail-val" id="mobile-acc-id">HS01</code>
+            </div>
+            <div class="profile-detail-item">
+              <span class="detail-label">Hạng học tập:</span>
+              <strong class="detail-val highlight" id="mobile-acc-rank">🌱 Tân Binh Python</strong>
+            </div>
+            <div class="profile-detail-item">
+              <span class="detail-label">Điểm tích lũy:</span>
+              <strong class="detail-val xp" id="mobile-acc-xp">0 XP</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Các tiện ích tài khoản -->
+        <div class="account-actions-card">
+          <h3 class="card-section-title">Tiện Ích & Dữ Liệu</h3>
+
+          <button class="acc-action-btn" id="acc-btn-back-code" type="button">
+            <span class="acc-action-icon">💻</span>
+            <div class="acc-action-texts">
+              <span class="acc-action-name">Vào Soạn Code Ngay</span>
+              <span class="acc-action-desc">Quay lại trình soạn thảo Python</span>
+            </div>
+            <span class="acc-action-arrow">➜</span>
+          </button>
+
+          <button class="acc-action-btn" id="acc-btn-download-code" type="button">
+            <span class="acc-action-icon">📥</span>
+            <div class="acc-action-texts">
+              <span class="acc-action-name">Tải Mã Nguồn (.py) Về Máy</span>
+              <span class="acc-action-desc">Lưu file mã nguồn bài học hiện tại</span>
+            </div>
+            <span class="acc-action-arrow">⬇</span>
+          </button>
+
+          <button class="acc-action-btn" id="acc-btn-reset-code" type="button">
+            <span class="acc-action-icon">🔄</span>
+            <div class="acc-action-texts">
+              <span class="acc-action-name">Đặt Lại Bài Học Ban Đầu</span>
+              <span class="acc-action-desc">Khôi phục code về bài mẫu gốc</span>
+            </div>
+            <span class="acc-action-arrow">↺</span>
+          </button>
+
+          <a href="/admin.html" class="acc-action-btn" id="acc-link-admin" style="display: none;">
+            <span class="acc-action-icon">⚙️</span>
+            <div class="acc-action-texts">
+              <span class="acc-action-name">Trang Quản Trị Hệ Thống (Admin)</span>
+              <span class="acc-action-desc">Quản lý học sinh, bài tập & điểm số</span>
+            </div>
+            <span class="acc-action-arrow">➜</span>
+          </a>
+
+          <button class="acc-action-btn" id="acc-btn-drive" type="button" style="display: none;">
+            <span class="acc-action-icon">☁️</span>
+            <div class="acc-action-texts">
+              <span class="acc-action-name">Cấu Hình Google Drive CMS</span>
+              <span class="acc-action-desc">Đồng bộ giáo trình & Google Sheets</span>
+            </div>
+            <span class="acc-action-arrow">⚙️</span>
+          </button>
+        </div>
+
+        <!-- Nút Đăng Xuất To Nổi Bật -->
+        <div class="account-logout-card">
+          <button class="btn-logout-full" id="mobile-btn-logout" type="button">
+            <span class="logout-icon">🚪</span>
+            <span>ĐĂNG XUẤT TÀI KHOẢN</span>
+          </button>
+          <p class="logout-hint">Tiến trình học tập và mã nguồn đã được tự động lưu an toàn.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- === KHUNG TRƯỢT KẾT QUẢ THÔNG MINH TRÊN ĐIỆN THOẠI (BOTTOM DRAWER) === -->
@@ -347,9 +454,9 @@
       <span class="bnav-label">Kết Quả</span>
       <span class="bnav-badge" id="bnav-terminal-badge" style="display: none;">●</span>
     </button>
-    <button class="bnav-tab-btn" id="bnav-btn-profile">
+    <button class="bnav-tab-btn" data-view="account" id="bnav-btn-profile">
       <span class="bnav-icon">👤</span>
-      <span class="bnav-label">Tài Khoản</span>
+      <span class="bnav-label" id="bnav-profile-label">Tài Khoản</span>
     </button>
   </nav>
 

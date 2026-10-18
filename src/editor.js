@@ -343,6 +343,16 @@ export class SublimeEditor {
     this.editor.focus();
   }
 
+  insertEnter() {
+    this.editor.insert("\n");
+    this.editor.focus();
+  }
+
+  backspace() {
+    this.editor.remove("left");
+    this.editor.focus();
+  }
+
   clear() {
     this.editor.setValue("", -1);
     this.editor.focus();

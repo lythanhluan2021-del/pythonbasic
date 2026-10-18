@@ -137,11 +137,28 @@ class PySublimeApp {
         const view = btn.dataset.view;
         if (view) {
           this.switchView(view);
-        } else if (btn.id === 'bnav-btn-profile') {
-          const studentBtn = document.getElementById('student-badge-btn');
-          if (studentBtn) studentBtn.click();
         }
       });
+    });
+
+    // === CÁC NÚT TRONG TAB TÀI KHOẢN TRÊN DI ĐỘNG (VIEW 4: PANEL ACCOUNT) ===
+    document.getElementById('acc-btn-back-code')?.addEventListener('click', () => this.switchView('ide'));
+    document.getElementById('acc-btn-download-code')?.addEventListener('click', () => {
+      const lessonId = this.currentLesson ? this.currentLesson.id : 'bai_tap';
+      this.editor.downloadCode(`${lessonId}.py`);
+      this.showToast(`Đã tải file "${lessonId}.py" về thiết bị!`);
+    });
+    document.getElementById('acc-btn-reset-code')?.addEventListener('click', () => {
+      this.resetCurrentLessonCode();
+    });
+    document.getElementById('acc-btn-drive')?.addEventListener('click', () => this.openDriveModal());
+    document.getElementById('mobile-btn-logout')?.addEventListener('click', () => {
+      const currentUser = adminStore.getCurrentUser();
+      const name = currentUser ? currentUser.fullName : 'bạn';
+      if (confirm(`Bạn có chắc chắn muốn đăng xuất khỏi tài khoản "${name}" không?`)) {
+        adminStore.logoutCurrentUser();
+        window.location.href = '/login.html';
+      }
     });
 
     // === NÚT ĐIỀU KHIỂN BOTTOM DRAWER CONSOLE TRÊN MOBILE ===
@@ -471,6 +488,10 @@ class PySublimeApp {
         this.editor.triggerAutocomplete();
       } else if (action === 'tab') {
         this.editor.insertTab();
+      } else if (action === 'enter') {
+        this.editor.insertEnter();
+      } else if (action === 'backspace') {
+        this.editor.backspace();
       } else if (action === 'indent') {
         this.editor.indentSelection();
       } else if (action === 'outdent') {
@@ -1115,6 +1136,67 @@ class PySublimeApp {
       }
       if (dropdownBtnDrive) {
         dropdownBtnDrive.style.display = isAdmin ? 'flex' : 'none';
+      }
+
+      // === ĐỒNG BỘ THÔNG TIN VÀO TAB TÀI KHOẢN DI ĐỘNG (VIEW 4: PANEL ACCOUNT) ===
+      const mobAvatar = document.getElementById('mobile-acc-avatar');
+      const mobName = document.getElementById('mobile-acc-name');
+      const mobRole = document.getElementById('mobile-acc-role');
+      const mobClass = document.getElementById('mobile-acc-class');
+      const mobClassBox = document.getElementById('mobile-acc-class-box');
+      const mobId = document.getElementById('mobile-acc-id');
+      const mobIdBox = document.getElementById('mobile-acc-id-box');
+      const mobRank = document.getElementById('mobile-acc-rank');
+      const mobXp = document.getElementById('mobile-acc-xp');
+      const mobLinkAdmin = document.getElementById('acc-link-admin');
+      const mobBtnDrive = document.getElementById('acc-btn-drive');
+      const bnavProfileLabel = document.getElementById('bnav-profile-label');
+
+      if (mobAvatar) {
+        mobAvatar.textContent = isAdmin ? '🛡️' : (currentUser.type === 'google' ? '🌐' : '🎓');
+      }
+      if (mobName) {
+        mobName.textContent = currentUser.fullName || (isAdmin ? 'Quản Trị Viên' : 'Học sinh');
+      }
+      if (mobRole) {
+        mobRole.textContent = isAdmin ? 'Quản Trị Viên (Admin)' : (currentUser.type === 'google' ? 'Tài Khoản Google' : 'Học Sinh');
+      }
+      if (mobClass && mobClassBox) {
+        if (currentUser.className) {
+          mobClassBox.style.display = 'flex';
+          mobClass.textContent = currentUser.className;
+        } else {
+          mobClassBox.style.display = 'none';
+        }
+      }
+      if (mobId && mobIdBox) {
+        const idVal = currentUser.username || currentUser.email;
+        if (idVal) {
+          mobIdBox.style.display = 'flex';
+          mobId.textContent = idVal;
+        } else {
+          mobIdBox.style.display = 'none';
+        }
+      }
+      if (mobRank) {
+        const rankTitle = document.getElementById('user-rank-title')?.textContent || 'Tân Binh Python';
+        const rankIcon = document.getElementById('user-rank-icon')?.textContent || '🌱';
+        mobRank.textContent = `${rankIcon} ${rankTitle}`;
+      }
+      if (mobXp) {
+        const totalXp = this.driveSync.getTotalXP ? this.driveSync.getTotalXP() : (currentUser.xp || 0);
+        mobXp.textContent = `${totalXp} XP`;
+      }
+      if (mobLinkAdmin) {
+        mobLinkAdmin.style.display = isAdmin ? 'flex' : 'none';
+      }
+      if (mobBtnDrive) {
+        mobBtnDrive.style.display = isAdmin ? 'flex' : 'none';
+      }
+      if (bnavProfileLabel) {
+        // Tên ngắn gọn trên thanh điều hướng đáy
+        const shortName = currentUser.fullName ? currentUser.fullName.split(' ').pop() : 'Tài Khoản';
+        bnavProfileLabel.textContent = shortName.length <= 8 ? shortName : 'Tài Khoản';
       }
     } else {
       if (badgeLabel) {

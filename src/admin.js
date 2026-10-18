@@ -5,6 +5,7 @@
 
 import { adminStore } from './admin-store.js';
 import { DriveSyncManager } from './drive-sync.js';
+import { DEFAULT_SCHOOL_STUDENTS } from './default-students.js';
 import * as XLSX from 'xlsx';
 
 class AdminController {
@@ -1268,6 +1269,15 @@ class AdminController {
       document.getElementById('modal-user-bulk')?.classList.add('show');
     });
     document.getElementById('btn-open-bulk-reset-modal')?.addEventListener('click', () => this.openBulkResetModal());
+
+    // Nút khôi phục danh sách 1.297 học sinh gốc
+    document.getElementById('btn-restore-default-students')?.addEventListener('click', () => {
+      if (confirm("Bạn có muốn nạp lại danh sách 1.297 học sinh chính thức của trường THPT Nguyễn Sinh Sắc không?")) {
+        adminStore.saveSchoolStudents(DEFAULT_SCHOOL_STUDENTS);
+        this.renderSchoolStudents();
+        this.showToast("✅ Đã nạp lại thành công 1.297 học sinh gốc!");
+      }
+    });
 
     // Nút xóa toàn bộ học sinh
     document.getElementById('btn-clear-school-students')?.addEventListener('click', () => {

@@ -76,8 +76,23 @@ class LoginController {
       btn.innerHTML = '<span>⏳ Đang xác thực...</span>';
 
       try {
-        // 1. Xác thực trong danh sách học sinh
-        const user = adminStore.verifyStudentLogin(username, password);
+        // 1. Xác thực trong danh sách học sinh (cục bộ hoặc kiểm tra Google Sheet)
+        let user;
+        try {
+          user = adminStore.verifyStudentLogin(username, password);
+        } catch (localErr) {
+          if (this.driveSync.isConnected()) {
+            btn.innerHTML = '<span>⏳ Đang kiểm tra Google Sheet...</span>';
+            const cloudData = await this.driveSync.fetchUsersFromSheet();
+            if (cloudData && Array.isArray(cloudData.schoolStudents)) {
+              user = adminStore.verifyStudentLogin(username, password);
+            } else {
+              throw localErr;
+            }
+          } else {
+            throw localErr;
+          }
+        }
 
         // 2. Đồng bộ hồ sơ học sinh vào DriveSync
         this.driveSync.saveStudentProfile({
@@ -99,7 +114,7 @@ class LoginController {
                 username: user.username,
                 fullName: user.fullName,
                 className: user.className,
-                device: navigator.userAgent.includes('Mobile') ? 'Điện thoại di động' : 'Máy tính'
+                device: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ? 'Điện thoại di động' : 'Máy tính'
               })
             }).catch(() => {});
           } catch (e) {}

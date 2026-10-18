@@ -5,9 +5,11 @@
 import { adminStore, STORAGE_KEYS } from './admin-store.js';
 import { COURSE_MODULES } from './course-data.js';
 
+export const DEFAULT_DRIVE_API_URL = 'https://script.google.com/macros/s/AKfycbwwi50hUCxhDU1SUEul3tknaQiKrb-NjpAft4Qz76kLpYG6VdCeAirtFmHSBTEtp0fP/exec';
+
 export class DriveSyncManager {
   constructor() {
-    this.apiUrl = localStorage.getItem(STORAGE_KEYS.DRIVE_API_URL) || '';
+    this.apiUrl = localStorage.getItem(STORAGE_KEYS.DRIVE_API_URL) || DEFAULT_DRIVE_API_URL;
     this.student = this.loadStudentProfile();
   }
 
@@ -65,6 +67,33 @@ export class DriveSyncManager {
     if (!res.ok) throw new Error(`Lỗi HTTP ${res.status}: Không thể kết nối tới Google Drive`);
     const data = await res.json();
     return data;
+  }
+
+  /**
+   * Tải danh sách tài khoản học sinh & Google từ Google Sheet
+   */
+  async fetchUsersFromSheet() {
+    if (!this.isConnected()) return null;
+    try {
+      const endpoint = this.apiUrl.includes('?') 
+        ? `${this.apiUrl}&action=get_all_users` 
+        : `${this.apiUrl}?action=get_all_users`;
+      const res = await fetch(endpoint, { method: 'GET', mode: 'cors' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data && data.status === 'success') {
+        if (Array.isArray(data.schoolStudents) && data.schoolStudents.length > 0) {
+          adminStore.saveSchoolStudents(data.schoolStudents);
+        }
+        if (Array.isArray(data.googleUsers)) {
+          adminStore.saveGoogleUsers(data.googleUsers);
+        }
+        return data;
+      }
+    } catch (e) {
+      console.warn("Không thể tải danh sách tài khoản từ Google Sheet:", e);
+    }
+    return null;
   }
 
   /**

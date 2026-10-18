@@ -4,6 +4,7 @@
  */
 
 import { COURSE_MODULES } from './course-data.js';
+import { DEFAULT_SCHOOL_STUDENTS } from './default-students.js';
 
 export const STORAGE_KEYS = {
   SETTINGS: 'pysublime_settings',
@@ -181,21 +182,24 @@ class AdminStore {
       const raw = localStorage.getItem(STORAGE_KEYS.SCHOOL_STUDENTS);
       if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           // Tự động dọn sạch nếu là mock data mẫu cũ
-          const isOldMock = parsed.length > 0 && parsed.every(s => 
+          const isOldMock = parsed.every(s => 
             s.username.startsWith('HS10A1_0') && ['Nguyễn Văn An', 'Trần Thị Bình', 'Lê Hoàng Cường', 'Phạm Minh Đức', 'Đặng Ngọc Hoa'].includes(s.fullName)
           );
-          if (isOldMock) {
-            localStorage.setItem(STORAGE_KEYS.SCHOOL_STUDENTS, JSON.stringify([]));
-            return [];
+          if (!isOldMock) {
+            return parsed;
           }
-          return parsed;
         }
       }
     } catch (e) {}
 
-    return [];
+    // Nạp sẵn 1.297 tài khoản học sinh chuẩn của trường THPT Nguyễn Sinh Sắc
+    try {
+      localStorage.setItem(STORAGE_KEYS.SCHOOL_STUDENTS, JSON.stringify(DEFAULT_SCHOOL_STUDENTS));
+    } catch (e) {}
+
+    return DEFAULT_SCHOOL_STUDENTS;
   }
 
   saveSchoolStudents(students) {
@@ -426,8 +430,10 @@ class AdminStore {
 
   verifyStudentLogin(username, password) {
     const list = this.getSchoolStudents();
-    const u = username.trim().toUpperCase();
-    const student = list.find(s => s.username.toUpperCase() === u);
+    const cleanUser = String(username || '').trim().toUpperCase();
+    const cleanPass = String(password || '').trim();
+
+    const student = list.find(s => String(s.username).trim().toUpperCase() === cleanUser);
 
     if (!student) {
       throw new Error(`Không tìm thấy tài khoản học sinh "${username}". Vui lòng kiểm tra lại!`);
@@ -437,8 +443,9 @@ class AdminStore {
       throw new Error(`Tài khoản "${username}" hiện đang bị tạm khóa. Vui lòng liên hệ giáo viên!`);
     }
 
-    if (student.password !== password) {
-      throw new Error(`Mật khẩu không chính xác!`);
+    const expectedPass = String(student.password || '123').trim();
+    if (expectedPass !== cleanPass) {
+      throw new Error(`Mật khẩu không chính xác! (Mật khẩu mặc định là 123)`);
     }
 
     // Cập nhật lastLogin

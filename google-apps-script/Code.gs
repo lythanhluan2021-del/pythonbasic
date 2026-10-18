@@ -15,8 +15,8 @@
  */
 
 // === CẤU HÌNH THƯ MỤC CỦA BẠN ===
-// Ví dụ: https://drive.google.com/drive/u/0/folders/1aBcDeFgHiJkLmNoPqRsTuVwXyZ -> ID là: 1aBcDeFgHiJkLmNoPqRsTuVwXyZ
-var ROOT_FOLDER_ID = ""; // Dán Folder ID của thư mục bài học vào đây (nếu để trống, script sẽ tự tạo thư mục mẫu)
+// Thư mục Python_Course_Data của bạn: https://drive.google.com/drive/u/1/folders/1NWZ_U-bGtqd5EnWGwUyauzqH3FkaBBjn
+var ROOT_FOLDER_ID = "1NWZ_U-bGtqd5EnWGwUyauzqH3FkaBBjn";
 var SPREADSHEET_NAME = "Python_Quan_Ly_Hoc_Sinh";
 
 /**
@@ -27,9 +27,19 @@ function doGet(e) {
   
   try {
     if (action === "ping") {
+      // Tự động kiểm tra và đảm bảo Google Sheet + các thư mục con nằm chuẩn trong thư mục dự án
+      var root = getRootFolder();
+      var ss = getOrCreateSpreadsheet();
+      var folderLyThuyet = getOrCreateFolder("01_LyThuyet");
+      var folderBaiTap = getOrCreateFolder("02_BaiTap");
+
       return jsonResponse({
         status: "success",
-        message: "Kết nối Google Drive thành công! Hệ thống sẵn sàng.",
+        message: "Kết nối thành công! Đã tự động tạo/chuyển file Google Sheet vào đúng thư mục Python_Course_Data của bạn.",
+        folderName: root.getName(),
+        folderId: root.getId(),
+        spreadsheetName: SPREADSHEET_NAME,
+        spreadsheetUrl: ss.getUrl(),
         timestamp: new Date().toISOString()
       });
     }
@@ -226,24 +236,25 @@ function recordLessonProgress(payload) {
 
 // === CÁC HÀM TIỆN ÍCH HỖ TRỢ ===
 
-function getOrCreateFolder(subfolderName) {
-  var root;
+function getRootFolder() {
   if (ROOT_FOLDER_ID && ROOT_FOLDER_ID.trim() !== "") {
     try {
-      root = DriveApp.getFolderById(ROOT_FOLDER_ID.trim());
+      return DriveApp.getFolderById(ROOT_FOLDER_ID.trim());
     } catch (e) {
-      root = DriveApp.getRootFolder();
-    }
-  } else {
-    // Tìm hoặc tạo thư mục gốc "Python_Course_Data"
-    var it = DriveApp.getFoldersByName("Python_Course_Data");
-    if (it.hasNext()) {
-      root = it.next();
-    } else {
-      root = DriveApp.createFolder("Python_Course_Data");
+      console.warn("Không mở được thư mục theo ROOT_FOLDER_ID: " + e.message);
     }
   }
 
+  // Nếu không có hoặc lỗi ID, tìm hoặc tạo thư mục "Python_Course_Data"
+  var it = DriveApp.getFoldersByName("Python_Course_Data");
+  if (it.hasNext()) {
+    return it.next();
+  }
+  return DriveApp.createFolder("Python_Course_Data");
+}
+
+function getOrCreateFolder(subfolderName) {
+  var root = getRootFolder();
   var subIt = root.getFoldersByName(subfolderName);
   if (subIt.hasNext()) {
     return subIt.next();
@@ -252,13 +263,37 @@ function getOrCreateFolder(subfolderName) {
 }
 
 function getOrCreateSpreadsheet() {
-  var files = DriveApp.getFilesByName(SPREADSHEET_NAME);
-  if (files.hasNext()) {
-    return SpreadsheetApp.open(files.next());
+  var root = getRootFolder();
+
+  // 1. Kiểm tra xem file đã nằm trong thư mục dự án chưa
+  var folderFiles = root.getFilesByName(SPREADSHEET_NAME);
+  if (folderFiles.hasNext()) {
+    return SpreadsheetApp.open(folderFiles.next());
   }
 
-  // Tạo mới Spreadsheet nếu chưa có
+  // 2. Nếu file trước đó bị tạo ở ngoài My Drive, di chuyển ngay vào thư mục dự án
+  var rootDriveFiles = DriveApp.getFilesByName(SPREADSHEET_NAME);
+  if (rootDriveFiles.hasNext()) {
+    var existingFile = rootDriveFiles.next();
+    try {
+      existingFile.moveTo(root);
+    } catch (e) {
+      root.addFile(existingFile);
+      DriveApp.getRootFolder().removeFile(existingFile);
+    }
+    return SpreadsheetApp.open(existingFile);
+  }
+
+  // 3. Nếu chưa từng tạo, tạo mới Spreadsheet và đưa ngay vào thư mục dự án
   var ss = SpreadsheetApp.create(SPREADSHEET_NAME);
+  var ssFile = DriveApp.getFileById(ss.getId());
+  try {
+    ssFile.moveTo(root);
+  } catch (e) {
+    root.addFile(ssFile);
+    DriveApp.getRootFolder().removeFile(ssFile);
+  }
+
   var s1 = ss.getActiveSheet();
   s1.setName("Danh_Sach_Hoc_Sinh");
   s1.appendRow(["Mã Học Sinh", "Họ Và Tên", "Lớp", "Ghi Chú"]);

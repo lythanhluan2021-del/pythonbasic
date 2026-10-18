@@ -1,16 +1,15 @@
 /**
  * =========================================================================
  * BỘ BỐC TÁCH DỮ LIỆU GOOGLE DRIVE & GOOGLE SHEETS CHO WEB APP HỌC PYTHON
- * Hệ Thống Quản Lý Toàn Diện: Giáo Trình, Bài Tập & Cơ Sở Dữ Liệu Tài Khoản
+ * Hệ Thống Quản Lý Toàn Diện: Giáo Trình, Bài Tập & CSDL Tài Khoản Đăng Nhập
  * =========================================================================
  * 
  * Hướng dẫn nhanh cho Thầy/Cô:
  * 1. Mở https://script.google.com/ và mở dự án Apps Script hiện tại của Thầy/Cô.
  * 2. Thay thế toàn bộ mã nguồn cũ bằng nội dung file này.
- * 3. Kiểm tra biến ROOT_FOLDER_ID bên dưới (đã điền sẵn ID thư mục của Thầy/Cô).
- * 4. Bấm biểu tượng 💾 (Lưu) hoặc Ctrl + S.
- * 5. Bấm "Deploy" (Triển khai) -> "Manage deployments" (Quản lý các bản triển khai)
- *    -> Bấm biểu tượng ✏️ (Chỉnh sửa) ở góc phải
+ * 3. Bấm biểu tượng 💾 (Lưu) hoặc Ctrl + S.
+ * 4. Bấm "Deploy" (Triển khai) -> "Manage deployments" (Quản lý các bản triển khai)
+ *    -> Bấm biểu tượng cây bút ✏️ (Chỉnh sửa) ở góc phải
  *    -> Ở mục Version (Phiên bản): Chọn "New version" (Phiên bản mới)
  *    -> Bấm nút "Deploy" (Triển khai).
  */
@@ -21,7 +20,7 @@ var ROOT_FOLDER_ID = "1NWZ_U-bGtqd5EnWGwUyauzqH3FkaBBjn";
 var SPREADSHEET_NAME = "Python_Quan_Ly_Hoc_Sinh";
 
 /**
- * Xử lý yêu cầu GET: Bốc tách bài học, bài tập hoặc kiểm tra kết nối & cấu trúc DB
+ * Xử lý yêu cầu GET: Bốc tách bài học, bài tập, kiểm tra kết nối & khởi tạo CSDL
  */
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "ping";
@@ -29,7 +28,7 @@ function doGet(e) {
   try {
     var root = getRootFolder();
     var ss = getOrCreateSpreadsheet();
-    // Đảm bảo cấu trúc 4 Sheet chuẩn luôn luôn tồn tại
+    // Đảm bảo cấu trúc 5 Sheet chuẩn luôn luôn tồn tại
     ensureDatabaseStructure(ss);
 
     if (action === "ping" || action === "init_database") {
@@ -38,12 +37,12 @@ function doGet(e) {
 
       return jsonResponse({
         status: "success",
-        message: "Kết nối thành công! Đã khởi tạo và đồng bộ cấu trúc 4 Sheet CSDL chuẩn vào đúng thư mục Python_Course_Data.",
+        message: "Kết nối thành công! Đã đồng bộ cấu trúc 5 Sheet CSDL chuẩn vào Google Sheet Python_Quan_Ly_Hoc_Sinh.",
         folderName: root.getName(),
         folderId: root.getId(),
         spreadsheetName: SPREADSHEET_NAME,
         spreadsheetUrl: ss.getUrl(),
-        tabs: ["Tai_Khoan_Admin", "Tai_Khoan_Hoc_Sinh", "Tai_Khoan_Google", "Bang_Diem_Bai_Tap"],
+        tabs: ["Tai_Khoan_Admin", "Tai_Khoan_Hoc_Sinh", "Tai_Khoan_Google", "Bang_Diem_Bai_Tap", "Nhat_Ky_Dang_Nhap"],
         timestamp: new Date().toISOString()
       });
     }
@@ -89,7 +88,7 @@ function doGet(e) {
 }
 
 /**
- * Xử lý yêu cầu POST: Đồng bộ CSDL học sinh (hỗ trợ >1000 hàng), Admin, Google Users & Điểm số
+ * Xử lý yêu cầu POST: Đồng bộ CSDL học sinh (hỗ trợ >1000 hàng), Admin, Google Users, Điểm số & Nhật ký đăng nhập
  */
 function doPost(e) {
   try {
@@ -129,31 +128,37 @@ function doPost(e) {
       });
     }
 
-    // 3. Đồng bộ tài khoản quản trị Admin
+    // 3. Ghi nhận nhật ký tài khoản đăng nhập (học sinh, admin, google)
+    if (action === "record_login") {
+      var logResult = recordLoginEvent(payload);
+      return jsonResponse({ status: "success", message: "Đã ghi nhận nhật ký đăng nhập!", data: logResult });
+    }
+
+    // 4. Đồng bộ tài khoản quản trị Admin
     if (action === "sync_admin") {
       saveAdminCredentialsToSheet(payload.admin || {});
       return jsonResponse({ status: "success", message: "Đã lưu thông tin tài khoản Admin lên Google Sheet!" });
     }
 
-    // 4. Ghi nhận người dùng Google đăng nhập
+    // 5. Ghi nhận người dùng Google đăng nhập
     if (action === "sync_google_user") {
       var res = recordGoogleUserToSheet(payload.profile || {});
       return jsonResponse({ status: "success", message: "Đã lưu tài khoản Google!", data: res });
     }
 
-    // 5. Ghi điểm làm bài tập
+    // 6. Ghi điểm làm bài tập
     if (action === "submit_exercise") {
       var result = recordExerciseSubmission(payload);
       return jsonResponse({ status: "success", message: "Đã lưu điểm thành công!", data: result });
     }
 
-    // 6. Cập nhật tiến độ lý thuyết
+    // 7. Cập nhật tiến độ lý thuyết
     if (action === "update_progress") {
       var prog = recordLessonProgress(payload);
       return jsonResponse({ status: "success", message: "Đã cập nhật tiến độ!", data: prog });
     }
 
-    // 7. Bốc tách danh sách học sinh từ file (.csv, .json) trên Drive
+    // 8. Bốc tách danh sách học sinh từ file (.csv, .json) trên Drive
     if (action === "sync_from_drive_file") {
       var importResult = syncStudentsFromUploadedDriveFiles();
       return jsonResponse({
@@ -172,7 +177,7 @@ function doPost(e) {
 
 /**
  * =========================================================================
- * THIẾT LẬP VÀ ĐẢM BẢO CẤU TRÚC 4 SHEET CSDL CHUẨN
+ * THIẾT LẬP VÀ ĐẢM BẢO CẤU TRÚC 5 SHEET CSDL CHUẨN
  * =========================================================================
  */
 function ensureDatabaseStructure(ss) {
@@ -189,16 +194,23 @@ function ensureDatabaseStructure(ss) {
 
   // --- 2. Tab Tai_Khoan_Hoc_Sinh (Tài khoản Học sinh nhà trường) ---
   var schoolSheet = ss.getSheetByName("Tai_Khoan_Hoc_Sinh");
+  var oldSheet = ss.getSheetByName("Danh_Sach_Hoc_Sinh");
+
   if (!schoolSheet) {
-    // Nếu trước đó đang dùng tab tên Danh_Sach_Hoc_Sinh thì tự động đổi tên thành Tai_Khoan_Hoc_Sinh
-    var oldSheet = ss.getSheetByName("Danh_Sach_Hoc_Sinh");
     if (oldSheet) {
       oldSheet.setName("Tai_Khoan_Hoc_Sinh");
       schoolSheet = oldSheet;
+      oldSheet = null;
     } else {
       schoolSheet = ss.insertSheet("Tai_Khoan_Hoc_Sinh");
     }
+  } else if (oldSheet) {
+    // Nếu cả 2 tab cùng tồn tại, xóa bỏ tab mẫu cũ Danh_Sach_Hoc_Sinh để tránh nhầm lẫn cho Thầy/Cô
+    try {
+      ss.deleteSheet(oldSheet);
+    } catch (e) {}
   }
+
   if (schoolSheet.getLastRow() === 0) {
     schoolSheet.appendRow(["Mã Học Sinh / Tên Đăng Nhập", "Họ Và Tên", "Lớp", "Mật Khẩu", "Trạng Thái", "Lần Đăng Nhập Cuối"]);
     schoolSheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#d9ead3");
@@ -224,12 +236,91 @@ function ensureDatabaseStructure(ss) {
     scoreSheet.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#fff2cc");
   }
 
+  // --- 5. Tab Nhat_Ky_Dang_Nhap (Lịch sử & trạng thái các tài khoản đã và đang đăng nhập) ---
+  var logSheet = ss.getSheetByName("Nhat_Ky_Dang_Nhap");
+  if (!logSheet) {
+    logSheet = ss.insertSheet("Nhat_Ky_Dang_Nhap");
+  }
+  if (logSheet.getLastRow() === 0) {
+    logSheet.appendRow(["Thời Gian", "Loại Tài Khoản", "Tên Đăng Nhập / Email", "Họ Và Tên", "Lớp", "Trạng Thái", "Thiết Bị / Trình Duyệt"]);
+    logSheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#d0e0e3");
+  }
+
   return ss;
 }
 
 /**
+ * Ghi nhận sự kiện đăng nhập vào Sheet Nhat_Ky_Dang_Nhap và cập nhật Lần Đăng Nhập Cuối
+ */
+function recordLoginEvent(payload) {
+  var ss = getOrCreateSpreadsheet();
+  ensureDatabaseStructure(ss);
+
+  var sheet = ss.getSheetByName("Nhat_Ky_Dang_Nhap");
+  if (!sheet) {
+    sheet = ss.insertSheet("Nhat_Ky_Dang_Nhap");
+    sheet.appendRow(["Thời Gian", "Loại Tài Khoản", "Tên Đăng Nhập / Email", "Họ Và Tên", "Lớp", "Trạng Thái", "Thiết Bị / Trình Duyệt"]);
+    sheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#d0e0e3");
+  }
+
+  var now = new Date().toLocaleString("vi-VN");
+  var userType = payload.type || (payload.email ? "Tài khoản Google" : (payload.role === "admin" ? "Quản Trị Viên" : "Học Sinh Trường"));
+  var username = String(payload.username || payload.email || "ANONYMOUS").trim();
+  var fullName = String(payload.fullName || "Người dùng").trim();
+  var className = String(payload.className || (userType.includes("Quản Trị") ? "Ban Quản Trị" : "Tự do")).trim();
+  var device = String(payload.device || "Trình duyệt Web").trim();
+
+  // 1. Ghi thêm 1 dòng lịch sử đăng nhập vào Nhat_Ky_Dang_Nhap
+  sheet.appendRow([
+    now,
+    userType,
+    username,
+    fullName,
+    className,
+    "Đang Đăng Nhập (Online)",
+    device
+  ]);
+
+  // 2. Cập nhật cột "Lần Đăng Nhập Cuối" trong bảng tài khoản tương ứng
+  try {
+    if (userType.includes("Học Sinh")) {
+      var sSheet = ss.getSheetByName("Tai_Khoan_Hoc_Sinh");
+      if (sSheet) {
+        var data = sSheet.getDataRange().getValues();
+        var targetUser = username.toUpperCase();
+        for (var i = 1; i < data.length; i++) {
+          if (String(data[i][0]).toUpperCase().trim() === targetUser) {
+            sSheet.getRange(i + 1, 6).setValue(now);
+            break;
+          }
+        }
+      }
+    } else if (userType.includes("Google")) {
+      var gSheet = ss.getSheetByName("Tai_Khoan_Google");
+      if (gSheet) {
+        var gData = gSheet.getDataRange().getValues();
+        var targetEmail = username.toLowerCase();
+        for (var j = 1; j < gData.length; j++) {
+          if (String(gData[j][0]).toLowerCase().trim() === targetEmail) {
+            gSheet.getRange(j + 1, 5).setValue(now);
+            break;
+          }
+        }
+      }
+    } else if (userType.includes("Quản Trị") || userType.includes("Admin")) {
+      var aSheet = ss.getSheetByName("Tai_Khoan_Admin");
+      if (aSheet && aSheet.getLastRow() >= 2) {
+        aSheet.getRange(2, 6).setValue(now);
+      }
+    }
+  } catch (errUpdate) {}
+
+  return { recordedAt: now, username: username };
+}
+
+/**
  * Lưu / Đồng bộ toàn bộ danh sách học sinh trường lên Google Sheet
- * Đặc biệt: Tự động mở rộng số hàng khi danh sách vượt quá 1000 học sinh (ví dụ: 1297 học sinh)
+ * Tự động mở rộng hàng khi danh sách vượt 1000 học sinh (hỗ trợ 1297+ học sinh trọn vẹn)
  */
 function saveSchoolStudentsToSheet(students) {
   var ss = getOrCreateSpreadsheet();
@@ -238,6 +329,12 @@ function saveSchoolStudentsToSheet(students) {
   var sheet = ss.getSheetByName("Tai_Khoan_Hoc_Sinh");
   if (!sheet) {
     sheet = ss.insertSheet("Tai_Khoan_Hoc_Sinh");
+  }
+
+  // Xóa tab mẫu cũ nếu còn tồn tại
+  var old = ss.getSheetByName("Danh_Sach_Hoc_Sinh");
+  if (old && old.getName() !== sheet.getName()) {
+    try { ss.deleteSheet(old); } catch (e) {}
   }
 
   var studentList = Array.isArray(students) ? students : [];
@@ -249,7 +346,7 @@ function saveSchoolStudentsToSheet(students) {
     sheet.insertRowsAfter(currentMaxRows, neededRows - currentMaxRows);
   }
 
-  // 2. Xóa toàn bộ nội dung cũ nhanh chóng
+  // 2. Xóa toàn bộ nội dung cũ
   sheet.clearContents();
 
   // 3. Thiết lập lại hàng tiêu đề chuẩn

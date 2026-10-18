@@ -86,7 +86,26 @@ class LoginController {
           className: user.className
         });
 
-        // 3. Chuyển hướng về trang học tập
+        // 3. Ghi nhận thời gian thực vào Sheet Nhat_Ky_Dang_Nhap trên Google Drive
+        if (this.driveSync.isConnected()) {
+          try {
+            fetch(this.driveSync.getApiUrl(), {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'record_login',
+                type: 'Học Sinh Nhà Trường',
+                username: user.username,
+                fullName: user.fullName,
+                className: user.className,
+                device: navigator.userAgent.includes('Mobile') ? 'Điện thoại di động' : 'Máy tính'
+              })
+            }).catch(() => {});
+          } catch (e) {}
+        }
+
+        // 4. Chuyển hướng về trang học tập
         window.location.href = '/';
       } catch (err) {
         this.showError(err.message);
@@ -163,10 +182,14 @@ class LoginController {
             fetch(this.driveSync.getApiUrl(), {
               method: 'POST',
               mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
               body: JSON.stringify({
-                action: 'sync_google_user',
-                profile: profile
+                action: 'record_login',
+                type: 'Tài khoản Google',
+                username: email,
+                fullName: name,
+                className: 'Ngoài trường',
+                device: navigator.userAgent.includes('Mobile') ? 'Điện thoại di động' : 'Máy tính'
               })
             }).catch(() => {});
           } catch (e) {}
@@ -200,6 +223,26 @@ class LoginController {
 
       try {
         adminStore.verifyAdminLogin(username, password);
+
+        // Ghi nhận nhật ký Admin đăng nhập
+        if (this.driveSync.isConnected()) {
+          try {
+            fetch(this.driveSync.getApiUrl(), {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'record_login',
+                type: 'Quản Trị Viên (Admin)',
+                username: username,
+                fullName: 'Quản Trị Viên Hệ Thống',
+                className: 'Ban Quản Trị',
+                device: navigator.userAgent.includes('Mobile') ? 'Điện thoại di động' : 'Máy tính'
+              })
+            }).catch(() => {});
+          } catch (e) {}
+        }
+
         window.location.href = '/admin.html';
       } catch (err) {
         this.showError(err.message);

@@ -31,54 +31,6 @@ export class PyodideRunner {
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"
       });
 
-      // Cấu hình chuẩn stdout/stderr và input() tương tác qua bridge window của JS
-      await this.pyodide.runPythonAsync(`
-import sys
-import builtins
-from js import window
-
-class WebStdout:
-    def write(self, s):
-        if s:
-            try:
-                window.__pyodide_stdout_handler(str(s))
-            except Exception:
-                pass
-    def flush(self):
-        pass
-
-class WebStderr:
-    def write(self, s):
-        if s:
-            try:
-                window.__pyodide_stderr_handler(str(s))
-            except Exception:
-                pass
-    def flush(self):
-        pass
-
-def _mobile_input(prompt=''):
-    p_str = str(prompt) if prompt is not None else ''
-    if p_str:
-        try:
-            window.__pyodide_stdout_handler(p_str)
-        except Exception:
-            pass
-    try:
-        val = str(window.__pyodide_input_handler(p_str) or '')
-    except Exception:
-        val = ''
-    try:
-        window.__pyodide_stdout_handler(val + '\\n')
-    except Exception:
-        pass
-    return val
-
-sys.stdout = WebStdout()
-sys.stderr = WebStderr()
-builtins.input = _mobile_input
-`);
-
       this.isReady = true;
       this.isLoading = false;
       if (onStatus) onStatus("Python 3.12 sẵn sàng! 🚀");
@@ -110,30 +62,34 @@ builtins.input = _mobile_input
 
     let stdoutBuffer = "";
 
-    // Đăng ký callbacks trên window để Python gọi trực tiếp
-    window.__pyodide_stdout_handler = (text) => {
-      stdoutBuffer += text;
-      if (onOutput) onOutput(text);
-    };
-
-    window.__pyodide_stderr_handler = (text) => {
-      if (onError) onError(text);
-    };
-
-    // Đăng ký hàm input tương tác
-    window.__pyodide_input_handler = (promptText) => {
-      if (onInputPrompt) {
-        return onInputPrompt(promptText || "Nhập giá trị: ");
+    // Sử dụng API native setStdout, setStderr, setStdin của Pyodide v0.26
+    this.pyodide.setStdout({
+      batched: (msg) => {
+        stdoutBuffer += msg + "\n";
+        if (onOutput) onOutput(msg + "\n");
       }
-      return window.prompt(promptText || "Nhập giá trị từ bàn phím:") || "";
-    };
+    });
+
+    this.pyodide.setStderr({
+      batched: (err) => {
+        if (onError) onError(err + "\n");
+      }
+    });
+
+    this.pyodide.setStdin({
+      stdin: () => {
+        const val = window.prompt("🐍 Python input(): Nhập dữ liệu từ bàn phím:") ?? "";
+        if (onOutput) onOutput(val + "\n");
+        return val;
+      }
+    });
 
     try {
       await this.pyodide.runPythonAsync(code);
       return { success: true, output: stdoutBuffer };
     } catch (err) {
       const cleanError = this.formatErrorMessage(err.message);
-      if (onError) onError(cleanError);
+      if (onError) onError(cleanError + "\n");
       return { success: false, error: cleanError };
     }
   }
@@ -154,17 +110,23 @@ builtins.input = _mobile_input
       let testOutput = "";
       const inputQueue = tc.input ? tc.input.split("\n") : [];
 
-      window.__pyodide_stdout_handler = (text) => {
-        testOutput += text;
-      };
+      this.pyodide.setStdout({
+        batched: (msg) => {
+          testOutput += (testOutput ? "\n" : "") + msg;
+        }
+      });
 
-      window.__pyodide_stderr_handler = (text) => {
-        testOutput += text;
-      };
+      this.pyodide.setStderr({
+        batched: (err) => {
+          testOutput += (testOutput ? "\n" : "") + err;
+        }
+      });
 
-      window.__pyodide_input_handler = () => {
-        return inputQueue.shift() || "";
-      };
+      this.pyodide.setStdin({
+        stdin: () => {
+          return inputQueue.shift() ?? "";
+        }
+      });
 
       try {
         await this.pyodide.runPythonAsync(code);

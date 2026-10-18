@@ -312,7 +312,9 @@ class PySublimeApp {
       const action = btn.dataset.action;
       const char = btn.dataset.char;
 
-      if (action === 'tab') {
+      if (action === 'autocomplete') {
+        this.editor.triggerAutocomplete();
+      } else if (action === 'tab') {
         this.editor.insertTab();
       } else if (action === 'indent') {
         this.editor.indentSelection();

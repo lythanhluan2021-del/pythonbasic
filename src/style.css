@@ -1530,3 +1530,62 @@ body.simplified-header #btn-open-drive-modal {
     padding: 10px;
   }
 }
+
+/* === ACE EDITOR AUTOCOMPLETE POPUP (MONOKAI THEME) === */
+.ace_editor.ace_autocomplete {
+  background: #1e1f1c !important;
+  border: 1px solid rgba(253, 151, 31, 0.45) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+  color: #f8f8f2 !important;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace !important;
+  font-size: 13.5px !important;
+  overflow: hidden !important;
+  z-index: 99999 !important;
+}
+
+.ace_autocomplete .ace_line {
+  padding: 4px 8px !important;
+  transition: background 0.15s ease !important;
+}
+
+.ace_autocomplete .ace_line-hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.ace_autocomplete .ace_completion-highlight {
+  color: var(--monokai-orange, #fd971f) !important;
+  font-weight: 700 !important;
+}
+
+.ace_autocomplete .ace_selected {
+  background: rgba(253, 151, 31, 0.25) !important;
+  color: #ffffff !important;
+  border-left: 3px solid var(--monokai-orange, #fd971f) !important;
+}
+
+.ace_autocomplete .ace_rightAlignedText {
+  color: var(--monokai-green, #a6e22e) !important;
+  font-size: 11px !important;
+  font-style: italic !important;
+}
+
+.ace_tooltip {
+  background: #181916 !important;
+  border: 1px solid rgba(166, 226, 46, 0.45) !important;
+  border-radius: 8px !important;
+  color: #e6db74 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  padding: 10px 14px !important;
+  max-width: 320px !important;
+  z-index: 999999 !important;
+}
+
+.ace_tooltip b {
+  color: var(--monokai-orange, #fd971f) !important;
+  font-family: 'Fira Code', monospace !important;
+  font-size: 13px !important;
+}

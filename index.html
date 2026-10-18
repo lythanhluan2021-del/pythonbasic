@@ -36,6 +36,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/ace.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/theme-monokai.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/mode-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/ext-language_tools.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/snippets/python.min.js"></script>
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="/src/style.css">
@@ -173,6 +175,7 @@
         <div class="mobile-virtual-keyboard" id="mobile-virtual-keyboard">
           <!-- Nhóm cú pháp nhanh Python cho di động -->
           <div class="vk-group">
+            <button class="vk-btn highlight action" data-action="autocomplete" title="Bật danh sách gợi ý nhắc lệnh Python">💡 Gợi ý</button>
             <button class="vk-btn highlight action" data-snippet="print()" title="Hàm in print()">print()</button>
             <button class="vk-btn highlight action" data-snippet="input()" title="Hàm nhập input()">input()</button>
             <button class="vk-btn action" data-snippet="if " title="Câu lệnh if">if</button>

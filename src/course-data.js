@@ -1,5 +1,5 @@
 /**
- * Course Data: Lộ trình học lập trình Python cơ bản (theo chuẩn HowKteam)
+ * Course Data: Lộ trình học lập trình Python cơ bản tiêu chuẩn
  * Gồm 6 chương, 30+ bài học, tích hợp code mẫu và bài tập thực hành tự chấm điểm.
  */
 

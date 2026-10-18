@@ -1568,7 +1568,7 @@ class AdminController {
 
     // Reset giáo trình gốc
     document.getElementById('btn-reset-default-curriculum')?.addEventListener('click', () => {
-      if (confirm("Bạn có chắc chắn muốn khôi phục lại giáo trình mẫu HowKteam chuẩn gốc không? Tất cả bài thêm/sửa tùy biến sẽ bị đặt lại!")) {
+      if (confirm("Bạn có chắc chắn muốn khôi phục lại giáo trình Python tiêu chuẩn gốc không? Tất cả bài thêm/sửa tùy biến sẽ bị đặt lại!")) {
         adminStore.resetCurriculumToDefault();
         this.renderCurriculum();
         this.loadOverview();

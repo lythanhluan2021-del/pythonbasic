@@ -73,26 +73,26 @@ body {
 }
 
 .brand-logo {
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, var(--monokai-orange), var(--monokai-pink));
-  color: #fff;
-  font-weight: 800;
-  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  box-shadow: 0 2px 8px rgba(253, 151, 31, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .brand-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--monokai-fg);
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
   display: flex;
   align-items: center;
   gap: 6px;
+  letter-spacing: -0.3px;
 }
 
 .brand-badge {
@@ -1112,9 +1112,9 @@ body.simplified-header #btn-open-drive-modal {
   }
 
   .brand-logo {
-    width: 26px;
-    height: 26px;
-    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
     border-radius: 6px;
   }
 

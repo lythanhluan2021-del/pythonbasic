@@ -28,8 +28,8 @@ export const DEFAULT_SETTINGS = {
   allowFreeNav: true,            // Cho phép học sinh tự do chọn bài học
   editorFontSize: 14,            // Cỡ chữ trong Ace Editor (13, 14, 16, 18)
   theme: 'monokai',
-  siteTitle: 'PySublime',
-  subTitle: 'Học Python Cơ Bản'
+  siteTitle: 'Python',
+  subTitle: 'Học Lập Trình Python Cơ Bản'
 };
 
 class AdminStore {

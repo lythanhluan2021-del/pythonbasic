@@ -349,4 +349,17 @@ export class SublimeEditor {
     this.editor.focus();
     this.editor.execCommand("startAutocomplete");
   }
+
+  downloadCode(fileName = 'bai_tap.py') {
+    const code = this.getCode();
+    const blob = new Blob([code], { type: 'text/x-python;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }

@@ -38,6 +38,18 @@ class PySublimeApp {
       this.editor.editor.setFontSize(`${this.settings.editorFontSize}px`);
     }
 
+    // Tự động lưu bản nháp code khi học sinh đang gõ (Auto-save draft trên điện thoại)
+    let autoSaveTimer = null;
+    this.editor.editor.session.on('change', () => {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        if (this.currentLesson) {
+          const currentCode = this.editor.getCode();
+          localStorage.setItem(`python_draft_${this.currentLesson.id}`, currentCode);
+        }
+      }, 400);
+    });
+
     // 3. Thiết lập bài học đầu tiên
     this.setupCurriculum();
     if (this.currentModules.length > 0 && this.currentModules[0].lessons.length > 0) {
@@ -165,7 +177,10 @@ class PySublimeApp {
           ? (this.currentLesson.practice?.initialCode || '')
           : (this.currentLesson.sampleCode || '');
 
-        if (confirm("Bạn có muốn đặt lại mã nguồn bài này về mẫu ban đầu không?")) {
+        if (confirm("Bạn có muốn đặt lại mã nguồn bài này về mẫu ban đầu không? (Bản nháp tự lưu của bài này sẽ được làm mới)")) {
+          if (this.currentLesson) {
+            localStorage.removeItem(`python_draft_${this.currentLesson.id}`);
+          }
           this.editor.setCode(template);
           this.logTerminal(`\n🔄 [Hệ thống]: Đã đặt lại mã nguồn về mẫu ban đầu.\n`, 'info');
         }
@@ -219,6 +234,17 @@ class PySublimeApp {
           adminStore.logoutCurrentUser();
           window.location.href = '/login.html';
         }
+      });
+    }
+
+    // Nút tải file mã nguồn Python về máy
+    const btnDownloadPy = document.getElementById('dropdown-btn-download-py');
+    if (btnDownloadPy) {
+      btnDownloadPy.addEventListener('click', () => {
+        this.closeUserDropdown();
+        const lessonId = this.currentLesson ? this.currentLesson.id : 'bai_tap';
+        this.editor.downloadCode(`${lessonId}.py`);
+        this.logTerminal(`\n📥 [Tải về]: Đã tải file "${lessonId}.py" về thiết bị thành công!\n`, 'info');
       });
     }
 
@@ -487,10 +513,12 @@ class PySublimeApp {
     // Render Lý thuyết
     this.renderLessonTheory(foundLesson);
 
-    // Mở code mẫu vào tab IDE
-    if (foundLesson.sampleCode) {
-      this.editor.createOrUpdateTab('main.py', 'main.py', foundLesson.sampleCode);
-    }
+    // Mở code vào tab IDE: Ưu tiên tải bản nháp học sinh đang viết dở (Auto-saved Draft)
+    const savedDraft = localStorage.getItem(`python_draft_${foundLesson.id}`);
+    const codeToLoad = (savedDraft !== null && savedDraft.trim().length > 0)
+      ? savedDraft
+      : (foundLesson.sampleCode || '# Viết mã Python tại đây\n');
+    this.editor.createOrUpdateTab('main.py', 'main.py', codeToLoad);
   }
 
   renderLessonTheory(lesson) {

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#191a18">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Web App học lập trình Python cơ bản chuẩn HowKteam với IDE Sublime Text Monokai tối ưu cho điện thoại, tích hợp Google Drive CMS.">
+  <title>PySublime - Học Python Cơ Bản với Sublime Text Mobile IDE</title>
+
+  <!-- Google Fonts: Fira Code & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Ace Editor & Pyodide CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/ace.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/theme-monokai.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.36.2/mode-python.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+  <!-- === HEADER THANH ĐIỀU HƯỚNG CHÍNH === -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">S</div>
+      <div class="brand-title">
+        PySublime
+        <span class="brand-badge">Mobile IDE</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header" id="btn-toggle-theory" title="Ẩn/Hiện lý thuyết để mở rộng không gian soạn thảo">
+        📖 <span id="theory-toggle-text">Ẩn Lý Thuyết</span>
+      </button>
+      <button class="btn-header" id="student-badge-btn" title="Hồ sơ học sinh">
+        👤 Đang tải...
+      </button>
+      <button class="btn-header btn-drive" id="btn-open-drive-modal" title="Cấu hình Google Drive">
+        📁 Google Drive
+      </button>
+      <a href="/admin.html" class="btn-header btn-admin-link" title="Mở trang Quản trị Admin">
+        ⚙️ Quản Trị
+      </a>
+    </div>
+  </header>
+
+  <!-- === THANH CHUYỂN TAB TRÊN ĐIỆN THOẠI (MOBILE VIEW SWITCHER) === -->
+  <nav class="mobile-view-nav" aria-label="Điều hướng xem trên di động">
+    <button class="nav-tab-btn" data-view="theory" id="nav-btn-theory">
+      <span>📖</span> Lý Thuyết
+    </button>
+    <button class="nav-tab-btn active" data-view="ide" id="nav-btn-ide">
+      <span>💻</span> Sublime IDE
+    </button>
+    <button class="nav-tab-btn" data-view="terminal" id="nav-btn-terminal">
+      <span>📟</span> Terminal
+      <span class="badge-count" id="terminal-badge">Python</span>
+    </button>
+  </nav>
+
+  <!-- === KHÔNG GIAN LÀM VIỆC CHÍNH === -->
+  <main class="workspace-container layout-simple" id="main-workspace">
+
+    <!-- === VIEW 1: LÝ THUYẾT & LỘ TRÌNH (HOWKTEAM) === -->
+    <section class="view-panel" id="panel-theory">
+      <div class="theory-wrapper">
+        <!-- Bộ chọn bài học -->
+        <div class="lesson-selector-bar">
+          <label for="lesson-dropdown-select" style="font-size: 13px; font-weight: 600; color: #a6e22e;">
+            📚 Chọn Bài Học:
+          </label>
+          <select id="lesson-dropdown-select" class="lesson-select-dropdown" aria-label="Chọn bài học Python">
+            <!-- Tự động điền bởi app.js -->
+          </select>
+        </div>
+
+        <!-- Nội dung bài học (Markdown) -->
+        <article class="lesson-content-card">
+          <div id="lesson-markdown-body">
+            <!-- Nội dung lý thuyết render tại đây -->
+          </div>
+
+          <!-- Khối code mẫu -->
+          <div id="lesson-sample-code-box" class="code-preview-box">
+            <!-- Code mẫu render tại đây -->
+          </div>
+        </article>
+
+        <!-- Khối thử thách thực hành -->
+        <div id="lesson-practice-container" class="practice-card">
+          <!-- Thử thách thực hành render tại đây -->
+        </div>
+      </div>
+    </section>
+
+    <!-- === KHUNG BỌC IDE & TERMINAL (TỰ ĐỘNG BỐ TRÍ DẠNG DỌC TINH GỌN TRÊN DESKTOP) === -->
+    <div class="ide-terminal-wrapper" id="ide-terminal-wrapper">
+      <!-- === VIEW 2: TRÌNH SOẠN THẢO SUBLIME TEXT IDE === -->
+      <section class="view-panel active" id="panel-ide">
+        <!-- Sublime Tabs Header -->
+        <div class="sublime-tabs-bar">
+          <div class="sublime-tabs-container" id="sublime-tabs-container">
+            <!-- Các tab main.py, bai_tap.py render tự động -->
+          </div>
+          <div class="tab-actions">
+            <button class="btn-action-toolbar btn-run-code" id="btn-run-code" title="Chạy code (Phím tắt F5 hoặc nút Run)">
+              <span>▶</span> Chạy Code
+            </button>
+            <button class="btn-action-toolbar btn-submit-code" id="btn-submit-practice-direct" title="Chấm điểm bài tập thực hành">
+              <span>📝</span> Chấm Điểm
+            </button>
+            <button class="btn-action-toolbar btn-toggle-term-btn" id="btn-toggle-terminal-view" title="Ẩn/Mở Terminal">
+              <span>📟</span> Console
+            </button>
+          </div>
+        </div>
+
+        <!-- Khung soạn thảo Ace Editor Monokai -->
+        <div class="sublime-editor-box">
+          <div id="ace-editor-instance"></div>
+        </div>
+
+        <!-- BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI DI ĐỘNG -->
+        <div class="mobile-virtual-keyboard" id="mobile-virtual-keyboard">
+          <!-- Nhóm thụt dòng (Indentation) -->
+          <div class="vk-group">
+            <button class="vk-btn highlight action" data-action="tab" title="Phím Tab (4 space)">Tab</button>
+            <button class="vk-btn highlight" data-action="indent" title="Thụt dòng vào (Indent)">⇥</button>
+            <button class="vk-btn highlight" data-action="outdent" title="Lùi dòng ra (Outdent)">⇤</button>
+          </div>
+
+          <!-- Nhóm ký tự đặc biệt hay dùng trong Python -->
+          <div class="vk-group">
+            <button class="vk-btn highlight" data-char=":" title="Dấu hai chấm (cực kỳ quan trọng sau if/for/def)">:</button>
+            <button class="vk-btn" data-char="()" title="Cặp ngoặc tròn ( )">( )</button>
+            <button class="vk-btn" data-char="[]" title="Cặp ngoặc vuông [ ]">[ ]</button>
+            <button class="vk-btn" data-char="{}" title="Cặp ngoặc nhọn { }">{ }</button>
+            <button class="vk-btn" data-char='""' title="Ngoặc kép chuỗi &quot; &quot;">" "</button>
+            <button class="vk-btn" data-char="''" title="Ngoặc đơn ' '">&#39; &#39;</button>
+            <button class="vk-btn" data-char="=" title="Dấu gán =">=</button>
+            <button class="vk-btn" data-char="_" title="Gạch dưới _">_</button>
+          </div>
+
+          <!-- Nhóm toán tử số học -->
+          <div class="vk-group">
+            <button class="vk-btn" data-char="+" title="Cộng">+</button>
+            <button class="vk-btn" data-char="-" title="Trừ">-</button>
+            <button class="vk-btn" data-char="*" title="Nhân">*</button>
+            <button class="vk-btn" data-char="/" title="Chia">/</button>
+            <button class="vk-btn" data-char="%" title="Chia lấy dư %">%</button>
+          </div>
+
+          <!-- Nhóm điều hướng con trỏ & Thao tác nhanh -->
+          <div class="vk-group">
+            <button class="vk-btn nav" data-action="nav-left" title="Sang trái 1 ký tự">◀</button>
+            <button class="vk-btn nav" data-action="nav-right" title="Sang phải 1 ký tự">▶</button>
+            <button class="vk-btn action" data-action="undo" title="Hoàn tác">↩</button>
+            <button class="vk-btn action" data-action="clear" title="Xóa hết code">🧹</button>
+          </div>
+        </div>
+
+        <!-- Sublime Status Bar -->
+        <footer class="sublime-status-bar" id="sublime-status-bar">
+          <!-- Render tự động bởi editor.js -->
+        </footer>
+      </section>
+
+      <!-- === VIEW 3: TERMINAL & KẾT QUẢ CHẤM ĐIỂM === -->
+      <section class="view-panel" id="panel-terminal">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <span>📟</span> Python 3.12 WebAssembly Console
+          </div>
+          <div class="terminal-controls">
+            <button class="btn-term-action" id="btn-submit-practice" style="color: #a6e22e; border-color: #a6e22e;">
+              📝 Chấm Điểm Thử Thách
+            </button>
+            <button class="btn-term-action" id="btn-clear-terminal">
+              🧹 Xóa Màn Hình
+            </button>
+            <button class="btn-term-action" id="btn-dock-term-toggle" title="Thu gọn/Mở rộng Console">
+              ▼
+            </button>
+          </div>
+        </div>
+
+        <!-- Màn hình Console xuất log stdout/stderr -->
+        <div class="terminal-screen" id="terminal-screen">
+          <span class="term-line-info">=== Chào mừng đến với PySublime Console ===</span>
+          <span class="term-line-info">Trình thông dịch Python 3.12 WebAssembly (Pyodide) sẵn sàng.</span>
+          <span class="term-line-info">Nhấn [▶ Chạy Code] trong tab Sublime IDE để xem kết quả tại đây.\n</span>
+        </div>
+
+        <!-- Khung nhập liệu tương tác di động khi Python gọi input() -->
+        <div class="input-prompt-box" id="mobile-input-prompt-box" style="display: none;">
+          <div class="prompt-text" id="prompt-text-label">🐍 Python đang chờ bạn nhập dữ liệu:</div>
+          <form class="prompt-form" id="prompt-submit-form">
+            <input type="text" id="prompt-field-input" class="prompt-input" placeholder="Nhập câu trả lời của bạn..." autocomplete="off">
+            <button type="submit" class="btn-prompt-submit">Gửi ↵</button>
+          </form>
+        </div>
+
+        <!-- Bảng kết quả chấm điểm các Test Cases -->
+        <div class="test-results-panel" id="test-results-panel" style="display: none;">
+          <!-- Render tự động kết quả chấm điểm -->
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- === MODAL CẤU HÌNH KẾT NỐI GOOGLE DRIVE CMS === -->
+  <div class="modal-overlay" id="modal-google-drive">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📁 Kết Nối Google Drive & Google Sheets</h3>
+        <button class="modal-close-btn" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: #d6d6d0; margin-bottom: 14px;">
+          Kết nối tới <strong>Google Apps Script Web App</strong> để tự động bốc tách bài học từ thư mục Drive và lưu điểm của học sinh vào Google Sheet hoàn toàn miễn phí.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="input-drive-api-url">Đường Dẫn Web App (Google Apps Script URL):</label>
+          <input type="url" id="input-drive-api-url" class="form-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+          <p class="form-hint">
+            💡 Xem hướng dẫn chi tiết từng bước tại file <code>google-apps-script/HUONG_DAN_KET_NOI.md</code>.
+          </p>
+        </div>
+
+        <div style="margin: 12px 0;">
+          <button type="button" class="btn-secondary" id="btn-test-drive-connection" style="width: 100%;">
+            🔍 Kiểm Tra Kết Nối Tới Drive
+          </button>
+          <div id="drive-test-status" style="font-size: 12px; margin-top: 6px; font-weight: 600;"></div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--sublime-border); border-radius: var(--radius-sm); padding: 10px; font-size: 12px; color: var(--monokai-gray);">
+          <strong>ℹ️ Khi chưa kết nối:</strong> Web App sẽ tự động dùng bộ giáo trình cơ bản HowKteam tích hợp sẵn (Offline Mode) để học sinh vẫn học và thực hành bình thường!
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary btn-modal-cancel">Hủy</button>
+        <button type="button" class="btn-primary" id="btn-save-drive-config">Lưu & Bốc Tách Dữ Liệu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === MODAL HỒ SƠ HỌC SINH === -->
+  <div class="modal-overlay" id="modal-student-profile">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>👤 Hồ Sơ Học Sinh</h3>
+        <button class="modal-close-btn" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="input-student-id">Mã Số Học Sinh (Student ID):</label>
+          <input type="text" id="input-student-id" class="form-input" placeholder="Ví dụ: HS10A1_12">
+          <p class="form-hint">Mã này dùng để giáo viên chấm điểm và xếp hạng trên Google Sheet.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-student-name">Họ Và Tên:</label>
+          <input type="text" id="input-student-name" class="form-input" placeholder="Ví dụ: Nguyễn Văn An">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-student-class">Lớp / Khóa Học:</label>
+          <input type="text" id="input-student-class" class="form-input" placeholder="Ví dụ: 10A1 hoặc Tự Học">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary btn-modal-cancel">Đóng</button>
+        <button type="button" class="btn-primary" id="btn-save-student-profile">Lưu Thông Tin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript Controller -->
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#141512">
+  <meta name="description" content="Trang Quản Trị Hệ Thống Học Python PySublime - Quản lý tính năng, giáo trình, kết nối Google Drive và học sinh.">
+  <title>Bảng Điều Khiển Quản Trị - PySublime Admin</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/admin.css">
+</head>
+<body>
+
+  <!-- === SIDEBAR ĐIỀU HƯỚNG QUẢN TRỊ === -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">S</div>
+      <div class="brand-info">
+        <div class="brand-name">PySublime</div>
+        <div class="brand-badge-admin">Admin Dashboard</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu" aria-label="Menu quản trị">
+      <div class="menu-category">Tổng Quan</div>
+      <a class="menu-item active" data-target="panel-overview" id="menu-btn-overview">
+        <span class="menu-icon">📊</span>
+        <span>Bảng Tổng Quan</span>
+      </a>
+
+      <div class="menu-category">Cấu Hình & Tính Năng</div>
+      <a class="menu-item" data-target="panel-features" id="menu-btn-features">
+        <span class="menu-icon">🎛️</span>
+        <span>Quản Lý Tính Năng</span>
+      </a>
+      <a class="menu-item" data-target="panel-curriculum" id="menu-btn-curriculum">
+        <span class="menu-icon">📚</span>
+        <span>Quản Lý Bài Học</span>
+      </a>
+      <a class="menu-item" data-target="panel-drive" id="menu-btn-drive">
+        <span class="menu-icon">☁️</span>
+        <span>Google Drive CMS</span>
+      </a>
+
+      <div class="menu-category">Học Tập & Học Sinh</div>
+      <a class="menu-item" data-target="panel-students" id="menu-btn-students">
+        <span class="menu-icon">🎓</span>
+        <span>Học Sinh & Điểm Số</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/" class="btn-switch-student" title="Mở trang học sinh">
+        <span>👁️ Xem Trang Học Sinh</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- === KHU VỰC NỘI DUNG CHÍNH === -->
+  <main class="admin-main">
+    <!-- Header trên cùng -->
+    <header class="admin-header">
+      <div class="header-left">
+        <h1 class="header-page-title" id="admin-page-title">
+          <span>📊</span> Bảng Điều Khiển Tổng Quan
+        </h1>
+      </div>
+      <div class="header-right">
+        <div class="status-pill offline" id="admin-drive-status-pill">
+          <span class="status-dot"></span>
+          <span id="admin-drive-status-text">Drive: Chưa kết nối</span>
+        </div>
+        <a href="/" class="btn-admin-secondary">
+          <span>Trang Người Dùng ↗</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Thân nội dung -->
+    <div class="content-body">
+
+      <!-- ========================================================
+           PANEL 1: TỔNG QUAN HỆ THỐNG
+           ======================================================== -->
+      <section class="admin-panel active" id="panel-overview">
+        <!-- 4 Thẻ chỉ số chính -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper orange">📚</div>
+            <div class="stat-content">
+              <span class="stat-label">Tổng Số Bài Học</span>
+              <span class="stat-value" id="stat-total-lessons">0</span>
+              <span class="stat-sub" id="stat-total-modules">0 chương giáo trình</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper green">🎯</div>
+            <div class="stat-content">
+              <span class="stat-label">Thử Thách Thực Hành</span>
+              <span class="stat-value" id="stat-total-exercises">0</span>
+              <span class="stat-sub">Có bộ chấm điểm tự động</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper cyan">👥</div>
+            <div class="stat-content">
+              <span class="stat-label">Học Sinh Thực Hành</span>
+              <span class="stat-value" id="stat-total-students">0</span>
+              <span class="stat-sub" id="stat-total-submissions">0 bài nộp</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper purple">🌟</div>
+            <div class="stat-content">
+              <span class="stat-label">Tỷ Lệ Đạt Thử Thách</span>
+              <span class="stat-value" id="stat-pass-rate">0%</span>
+              <span class="stat-sub">Dựa trên kết quả test cases</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hộp điều khiển nhanh -->
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">⚡</span>
+              <div>
+                <h2 class="card-title">Hành Động Quản Trị Nhanh</h2>
+                <p class="card-subtitle">Các lối tắt điều phối hệ thống được dùng nhiều nhất</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-admin-primary" id="btn-quick-add-lesson">
+              <span>➕ Thêm Bài Học Mới</span>
+            </button>
+            <button class="btn-admin-secondary" id="btn-quick-sync-drive">
+              <span>🔄 Đồng Bộ Google Drive</span>
+            </button>
+            <button class="btn-admin-secondary" id="btn-quick-open-settings">
+              <span>🎛️ Tùy Chỉnh Giao Diện Học Sinh</span>
+            </button>
+            <button class="btn-admin-secondary" id="btn-quick-export-grades">
+              <span>📥 Xuất Bảng Điểm (CSV)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bảng bài nộp gần đây -->
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">🕒</span>
+              <div>
+                <h2 class="card-title">Bài Làm Học Sinh Gần Đây</h2>
+                <p class="card-subtitle">Theo dõi học sinh nộp code và điểm số thời gian thực</p>
+              </div>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table" id="table-recent-submissions">
+              <thead>
+                <tr>
+                  <th>Thời Gian</th>
+                  <th>Học Sinh</th>
+                  <th>Lớp</th>
+                  <th>Bài Tập</th>
+                  <th>Điểm Số</th>
+                  <th>Kết Quả</th>
+                  <th>Hành Động</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-recent-submissions">
+                <tr>
+                  <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    Chưa có bài tập nào được nộp. Học sinh làm bài trên IDE kết quả sẽ hiện tại đây!
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PANEL 2: QUẢN LÝ TÍNH NĂNG & GIAO DIỆN HỌC SINH (FEATURE TOGGLES)
+           ======================================================== -->
+      <section class="admin-panel" id="panel-features">
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">🎯</span>
+              <div>
+                <h2 class="card-title">Đơn Giản Hóa Giao Diện Người Dùng (User Experience)</h2>
+                <p class="card-subtitle">Tinh chỉnh trang học sinh để giảm độ phức tạp, giúp học sinh tập trung tối đa</p>
+              </div>
+            </div>
+            <button class="btn-admin-primary" id="btn-save-feature-settings">
+              <span>💾 Lưu Cấu Hình Ngay</span>
+            </button>
+          </div>
+
+          <div class="card-body">
+            <!-- 1. Chế độ hiển thị chính -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Bố Cục Trang Học Sinh (Student Layout Mode)</div>
+                <div class="setting-desc">
+                  Chọn cách bố trí trang học sinh trên máy tính. Khuyên dùng <strong>Tinh gọn 2 Cột</strong> để tránh màn hình bị chia 3 cột quá chật chội.
+                </div>
+              </div>
+              <div>
+                <select class="admin-select" id="setting-layout-mode">
+                  <option value="simple">🟢 Tinh Gọn (2 Cột: Lý thuyết + IDE, Terminal ở dưới)</option>
+                  <option value="split">⚪ Chia 3 Cột Đồng Thời (Lý thuyết | IDE | Terminal)</option>
+                  <option value="tabs">⚪ Chế Độ Từng Bước (Theo Tab)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 2. Bàn phím ảo di động -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Hiển Thị Bàn Phím Ảo Trợ Lực (Mobile Virtual Keyboard)</div>
+                <div class="setting-desc">
+                  Dãy phím trợ lực (Tab, :, (), [], {}, +, -) dành cho điện thoại. Tự động ẩn trên máy tính để không làm rối mắt học sinh dùng bàn phím thật.
+                </div>
+              </div>
+              <div>
+                <select class="admin-select" id="setting-virtual-keyboard">
+                  <option value="auto">🟢 Tự Động (Chỉ hiện trên điện thoại/màn hình nhỏ, ẩn trên PC)</option>
+                  <option value="always">⚪ Luôn hiển thị trên mọi thiết bị</option>
+                  <option value="never">⚪ Luôn ẩn</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 3. Thanh Header Tinh Gọn -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Thanh Header Tinh Gọn Cho Học Sinh</div>
+                <div class="setting-desc">
+                  Ẩn nút cấu hình kỹ thuật "Kết Nối Google Drive" khỏi thanh header học sinh để tránh bấm nhầm và gây phân tâm. Việc quản lý Drive sẽ do trang Admin đảm nhận.
+                </div>
+              </div>
+              <div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-simplified-header" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 4. Gợi ý bài tập -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Hiển Thị Gợi Ý Thử Thách (Exercise Hints)</div>
+                <div class="setting-desc">
+                  Cho phép học sinh xem gợi ý công thức và phương pháp khi làm bài tập thử thách chưa đạt.
+                </div>
+              </div>
+              <div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-show-hints" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 5. Tự động mở Terminal khi chạy code -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Tự Động Mở Terminal Khi Bấm Chạy Code / Chấm Điểm</div>
+                <div class="setting-desc">
+                  Mở mượt mà khung Terminal kết quả ở dưới mỗi khi học sinh bấm Run Code hoặc Nộp bài.
+                </div>
+              </div>
+              <div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-auto-terminal" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 6. Tự do chuyển bài học -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Mở Khóa Tự Do Chọn Bài Học (Free Navigation)</div>
+                <div class="setting-desc">
+                  Cho phép học sinh tự do nhảy tới bất kỳ bài nào thay vì bắt buộc phải hoàn thành tuần tự.
+                </div>
+              </div>
+              <div>
+                <label class="switch">
+                  <input type="checkbox" id="setting-free-nav" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 7. Cỡ chữ Sublime Editor -->
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-title">Cỡ Chữ Sublime Editor Mặc Định</div>
+                <div class="setting-desc">
+                  Điều chỉnh kích thước font chữ Monospace hiển thị trong trình soạn thảo.
+                </div>
+              </div>
+              <div>
+                <select class="admin-select" id="setting-font-size">
+                  <option value="13">13px - Nhỏ gọn</option>
+                  <option value="14" selected>14px - Chuẩn Sublime Text</option>
+                  <option value="16">16px - Dễ nhìn cho học sinh</option>
+                  <option value="18">18px - Cỡ lớn</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PANEL 3: QUẢN LÝ BÀI HỌC & GIÁO TRÌNH (CURRICULUM)
+           ======================================================== -->
+      <section class="admin-panel" id="panel-curriculum">
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">📚</span>
+              <div>
+                <h2 class="card-title">Cây Giáo Trình & Danh Sách Bài Học</h2>
+                <p class="card-subtitle">Thêm, sửa, xóa, biên tập nội dung Markdown, code mẫu và test cases</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-admin-secondary" id="btn-export-curriculum-json" title="Xuất file JSON để sao lưu">
+                <span>📥 Xuất JSON</span>
+              </button>
+              <button class="btn-admin-secondary" id="btn-import-curriculum-json" title="Nạp giáo trình từ file JSON">
+                <span>📤 Nhập JSON</span>
+              </button>
+              <button class="btn-admin-danger" id="btn-reset-default-curriculum" title="Khôi phục lại giáo trình mẫu HowKteam ban đầu">
+                <span>🔄 Khôi Phục Gốc</span>
+              </button>
+              <button class="btn-admin-primary" id="btn-add-new-lesson">
+                <span>➕ Thêm Bài Học Mới</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Ô tìm kiếm bài học -->
+            <div style="margin-bottom: 16px;">
+              <input type="text" id="input-search-lessons" class="admin-input" placeholder="🔍 Tìm kiếm bài học theo tiêu đề hoặc từ khóa..." style="width: 100%;">
+            </div>
+
+            <!-- Danh sách các module và bài học -->
+            <div id="curriculum-accordion-container">
+              <!-- Render tự động bởi admin.js -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PANEL 4: CẤU HÌNH GOOGLE DRIVE & GOOGLE SHEETS CMS
+           ======================================================== -->
+      <section class="admin-panel" id="panel-drive">
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">☁️</span>
+              <div>
+                <h2 class="card-title">Kết Nối Google Apps Script Web App</h2>
+                <p class="card-subtitle">Đồng bộ tự động bài học từ Google Drive và lưu điểm học sinh vào Google Sheet</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="form-field">
+              <label for="admin-drive-url-input">Đường Dẫn Web App (Google Apps Script URL):</label>
+              <input type="url" id="admin-drive-url-input" class="admin-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+              <span style="font-size: 12px; color: var(--text-muted);">
+                💡 URL này nhận được sau khi bạn Triển khai (Deploy) script <code>google-apps-script/Code.gs</code> dạng Web App với quyền truy cập "Anyone".
+              </span>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 14px;">
+              <button class="btn-admin-primary" id="btn-admin-test-drive">
+                <span>🔍 Kiểm Tra Kết Nối (Ping Test)</span>
+              </button>
+              <button class="btn-admin-secondary" id="btn-admin-save-drive">
+                <span>💾 Lưu Đường Dẫn</span>
+              </button>
+              <button class="btn-admin-secondary" id="btn-admin-sync-drive-now">
+                <span>🔄 Bốc Tách Dữ Liệu Ngay</span>
+              </button>
+            </div>
+
+            <div id="drive-ping-result-box" style="margin-top: 16px; display: none; padding: 14px; border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-mono);">
+              <!-- Kết quả ping -->
+            </div>
+
+            <!-- Hướng dẫn chi tiết -->
+            <div style="margin-top: 24px; padding: 18px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--admin-border); border-radius: var(--radius-sm);">
+              <h3 style="font-size: 14px; color: var(--accent-orange); margin-bottom: 8px;">📖 Hướng dẫn nhanh cho Quản trị viên / Giáo viên:</h3>
+              <ol style="font-size: 13px; color: var(--text-muted); line-height: 1.8; padding-left: 20px;">
+                <li>Mở file <code>google-apps-script/Code.gs</code> trong thư mục dự án và sao chép toàn bộ code.</li>
+                <li>Truy cập <a href="https://script.google.com" target="_blank" style="color: var(--accent-cyan);">Google Apps Script</a>, tạo dự án mới và dán code vào.</li>
+                <li>Điền ID thư mục Google Drive của bạn (nơi chứa các bài học) vào biến <code>ROOT_FOLDER_ID</code>.</li>
+                <li>Bấm <strong>Triển khai (Deploy)</strong> &gt; <strong>Triển khai mới</strong> &gt; Chọn loại <strong>Ứng dụng web (Web app)</strong>.</li>
+                <li>Mục "Ai có quyền truy cập" chọn <strong>Bất kỳ ai (Anyone)</strong>, sau đó sao chép Web App URL dán vào ô bên trên.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================
+           PANEL 5: HỌC SINH & BẢNG ĐIỂM (STUDENTS & GRADES)
+           ======================================================== -->
+      <section class="admin-panel" id="panel-students">
+        <div class="card-section">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span style="font-size: 20px;">🎓</span>
+              <div>
+                <h2 class="card-title">Sổ Điểm & Lịch Sử Bài Nộp Của Học Sinh</h2>
+                <p class="card-subtitle">Xem điểm, mã nguồn Python đã nộp, thời gian và xuất báo cáo điểm số</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-admin-secondary" id="btn-export-grades-csv">
+                <span>📥 Xuất Bảng Điểm (CSV)</span>
+              </button>
+              <button class="btn-admin-danger" id="btn-clear-all-submissions">
+                <span>🧹 Xóa Lịch Sử Học Sinh</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div style="margin-bottom: 16px; display: flex; gap: 12px;">
+              <input type="text" id="input-search-students" class="admin-input" placeholder="🔍 Tìm theo Mã HS, Tên hoặc Lớp..." style="flex: 1;">
+              <select class="admin-select" id="filter-submission-status">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="passed">Chỉ xem bài ĐẠT (10 điểm)</option>
+                <option value="failed">Chỉ xem bài CHƯA ĐẠT</option>
+              </select>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table" id="table-all-submissions">
+                <thead>
+                  <tr>
+                    <th>Thời Gian Nộp</th>
+                    <th>Mã Học Sinh</th>
+                    <th>Họ &amp; Tên</th>
+                    <th>Lớp</th>
+                    <th>Bài Tập / Thử Thách</th>
+                    <th>Điểm Số</th>
+                    <th>Trạng Thái</th>
+                    <th>Hành Động</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-all-submissions">
+                  <!-- Render tự động -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- === MODAL THÊM / SỬA BÀI HỌC === -->
+  <div class="admin-modal-overlay" id="modal-lesson-editor">
+    <div class="admin-modal" style="max-width: 800px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="lesson-modal-title">➕ Thêm Bài Học Mới</h3>
+        <button class="btn-icon-action" id="btn-close-lesson-modal" style="border: none;">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <input type="hidden" id="form-lesson-id">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-field">
+            <label for="form-module-select">Thuộc Chương Giáo Trình:</label>
+            <select class="admin-select" id="form-module-select">
+              <!-- Render động -->
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="form-lesson-duration">Thời Lượng Dự Kiến:</label>
+            <input type="text" id="form-lesson-duration" class="admin-input" placeholder="Ví dụ: 10 phút">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="form-lesson-title">Tiêu Đề Bài Học:</label>
+          <input type="text" id="form-lesson-title" class="admin-input" placeholder="Ví dụ: Bài 7: Vòng lặp For trong Python">
+        </div>
+
+        <div class="form-field">
+          <label for="form-lesson-theory">Lý Thuyết Bài Học (Hỗ trợ Markdown):</label>
+          <textarea id="form-lesson-theory" class="admin-textarea" rows="6" placeholder="# Tiêu đề lớn&#10;### 1. Nội dung..."></textarea>
+        </div>
+
+        <div class="form-field">
+          <label for="form-lesson-sample-code">Mã Nguồn Python Mẫu:</label>
+          <textarea id="form-lesson-sample-code" class="admin-textarea" rows="4" placeholder="# Viết code mẫu minh họa tại đây&#10;print('Hello Python')"></textarea>
+        </div>
+
+        <!-- Khung Bài Tập Thử Thách Thực Hành -->
+        <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--admin-border); border-radius: var(--radius-sm); padding: 14px;">
+          <h4 style="font-size: 13.5px; color: var(--accent-green); margin-bottom: 10px;">🎯 Thử Thách Thực Hành &amp; Chấm Điểm Tự Động</h4>
+          
+          <div class="form-field" style="margin-bottom: 10px;">
+            <label for="form-practice-title">Tên Thử Thách:</label>
+            <input type="text" id="form-practice-title" class="admin-input" placeholder="Ví dụ: Thử thách: Tính tổng các số từ 1 đến N">
+          </div>
+
+          <div class="form-field" style="margin-bottom: 10px;">
+            <label for="form-practice-desc">Đề Bài Thử Thách (Mô tả yêu cầu):</label>
+            <textarea id="form-practice-desc" class="admin-textarea" rows="3" placeholder="Viết chương trình in ra các số chẵn..."></textarea>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 10px;">
+            <label for="form-practice-init-code">Code Khởi Tạo (Ban đầu học sinh nhìn thấy):</label>
+            <textarea id="form-practice-init-code" class="admin-textarea" rows="3" placeholder="# Viết code của bạn tại đây:&#10;"></textarea>
+          </div>
+
+          <div class="form-field" style="margin-bottom: 10px;">
+            <label for="form-practice-expected">Kết Quả Mong Đợi (Output kỳ vọng):</label>
+            <input type="text" id="form-practice-expected" class="admin-input" placeholder="Ví dụ: 15 hoặc Xin chao">
+          </div>
+
+          <div class="form-field">
+            <label for="form-practice-hint">Gợi Ý Khi Học Sinh Làm Sai:</label>
+            <input type="text" id="form-practice-hint" class="admin-input" placeholder="Ví dụ: Dùng hàm sum(range(1, 6))">
+          </div>
+        </div>
+
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn-admin-secondary" id="btn-cancel-lesson-form">Hủy</button>
+        <button class="btn-admin-primary" id="btn-save-lesson-form">Lưu Bài Học</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === MODAL XEM CODE BÀI NỘP HỌC SINH === -->
+  <div class="admin-modal-overlay" id="modal-view-submission">
+    <div class="admin-modal" style="max-width: 650px;">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="submission-modal-title">💻 Mã Nguồn Học Sinh Đã Nộp</h3>
+        <button class="btn-icon-action" id="btn-close-sub-modal" style="border: none;">✕</button>
+      </div>
+      <div class="admin-modal-body">
+        <div id="submission-meta-info" style="font-size: 13px; color: var(--text-muted);"></div>
+        <pre id="submission-code-content" style="background: #141512; border: 1px solid var(--admin-border); padding: 14px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 13px; color: var(--accent-yellow); overflow-x: auto; white-space: pre-wrap;"></pre>
+      </div>
+      <div class="admin-modal-footer">
+        <button class="btn-admin-secondary" id="btn-close-sub-modal-2">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for importing JSON -->
+  <input type="file" id="input-import-json-file" accept=".json" style="display: none;">
+
+  <!-- Toast container for instant feedback -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Main Admin Controller Script -->
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,743 @@
+/**
+ * Admin Dashboard Controller
+ * Quản lý toàn bộ tính năng, giáo trình, cấu hình Drive và học sinh.
+ */
+
+import { adminStore } from './admin-store.js';
+import { DriveSyncManager } from './drive-sync.js';
+
+class AdminController {
+  constructor() {
+    this.driveSync = new DriveSyncManager();
+    this.curriculum = adminStore.getCurriculum();
+    this.settings = adminStore.getSettings();
+  }
+
+  init() {
+    console.log("Khởi động PySublime Admin Dashboard...");
+    this.bindNavigation();
+    this.loadOverview();
+    this.loadFeatureSettings();
+    this.renderCurriculum();
+    this.loadDriveConfig();
+    this.loadStudentSubmissions();
+    this.bindActionButtons();
+  }
+
+  // === THÔNG BÁO TOAST ===
+  showToast(message, isError = false) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${isError ? 'error' : ''}`;
+    toast.innerHTML = `<span>${isError ? '❌' : '✅'}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  }
+
+  // === ĐIỀU HƯỚNG TABS SIDEBAR ===
+  bindNavigation() {
+    const menuItems = document.querySelectorAll('.sidebar-menu .menu-item');
+    const panels = document.querySelectorAll('.admin-panel');
+    const pageTitle = document.getElementById('admin-page-title');
+
+    const titleMap = {
+      'panel-overview': '<span>📊</span> Bảng Điều Khiển Tổng Quan',
+      'panel-features': '<span>🎛️</span> Quản Lý Tính Năng & Giao Diện',
+      'panel-curriculum': '<span>📚</span> Quản Lý Bài Học & Giáo Trình',
+      'panel-drive': '<span>☁️</span> Kết Nối Google Drive & Sheets CMS',
+      'panel-students': '<span>🎓</span> Quản Lý Học Sinh & Bảng Điểm'
+    };
+
+    menuItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = item.dataset.target;
+
+        menuItems.forEach(m => m.classList.remove('active'));
+        item.classList.add('active');
+
+        panels.forEach(p => p.classList.remove('active'));
+        const activePanel = document.getElementById(targetId);
+        if (activePanel) {
+          activePanel.classList.add('active');
+        }
+
+        if (pageTitle && titleMap[targetId]) {
+          pageTitle.innerHTML = titleMap[targetId];
+        }
+
+        // Tải lại dữ liệu tương ứng
+        if (targetId === 'panel-overview') this.loadOverview();
+        if (targetId === 'panel-students') this.loadStudentSubmissions();
+        if (targetId === 'panel-curriculum') this.renderCurriculum();
+      });
+    });
+  }
+
+  // === 1. TỔNG QUAN HỆ THỐNG ===
+  loadOverview() {
+    const stats = adminStore.getAnalytics();
+    
+    document.getElementById('stat-total-lessons').textContent = stats.totalLessons;
+    document.getElementById('stat-total-modules').textContent = `${stats.totalModules} chương giáo trình`;
+    document.getElementById('stat-total-exercises').textContent = stats.totalExercises;
+    document.getElementById('stat-total-students').textContent = stats.uniqueStudents;
+    document.getElementById('stat-total-submissions').textContent = `${stats.totalSubmissions} bài nộp`;
+    document.getElementById('stat-pass-rate').textContent = `${stats.passRate}%`;
+
+    // Cập nhật trạng thái Drive trên header
+    const pill = document.getElementById('admin-drive-status-pill');
+    const pillText = document.getElementById('admin-drive-status-text');
+    if (pill && pillText) {
+      if (stats.isDriveConnected) {
+        pill.className = 'status-pill connected';
+        pillText.textContent = 'Drive: Đã kết nối';
+      } else {
+        pill.className = 'status-pill offline';
+        pillText.textContent = 'Drive: Chưa kết nối';
+      }
+    }
+
+    // Render danh sách gần đây
+    this.renderRecentSubmissions();
+  }
+
+  renderRecentSubmissions() {
+    const tbody = document.getElementById('tbody-recent-submissions');
+    if (!tbody) return;
+
+    const logs = adminStore.getSubmissionLogs();
+    if (logs.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            Chưa có bài tập nào được nộp. Khi học sinh làm bài trên IDE kết quả sẽ tự động lưu vào đây!
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const recent = logs.slice(0, 5);
+    tbody.innerHTML = recent.map(item => {
+      const timeStr = new Date(item.timestamp).toLocaleString('vi-VN');
+      const passClass = item.passed ? 'pass' : 'fail';
+      const passText = item.passed ? 'ĐẠT' : 'CHƯA ĐẠT';
+      return `
+        <tr>
+          <td><span style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">${timeStr}</span></td>
+          <td><strong>${this.escape(item.studentName || 'Học sinh')}</strong> (${this.escape(item.studentId || '')})</td>
+          <td>${this.escape(item.className || 'Tự do')}</td>
+          <td><code>${this.escape(item.exerciseId || '')}</code></td>
+          <td><strong style="color: ${item.passed ? 'var(--accent-green)' : 'var(--accent-pink)'}">${item.score || 0}đ</strong></td>
+          <td><span class="score-badge ${passClass}">${passText}</span></td>
+          <td>
+            <button class="btn-icon-action btn-view-code" data-id="${item.id}" title="Xem code học sinh đã nộp">
+              👁️
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-view-code').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        this.openViewSubmissionModal(id);
+      });
+    });
+  }
+
+  // === 2. QUẢN LÝ TÍNH NĂNG (FEATURE SETTINGS) ===
+  loadFeatureSettings() {
+    const s = this.settings;
+
+    const layoutSelect = document.getElementById('setting-layout-mode');
+    if (layoutSelect) layoutSelect.value = s.layoutMode || 'simple';
+
+    const vkSelect = document.getElementById('setting-virtual-keyboard');
+    if (vkSelect) vkSelect.value = s.showVirtualKeyboard || 'auto';
+
+    const headerCheck = document.getElementById('setting-simplified-header');
+    if (headerCheck) headerCheck.checked = s.simplifiedHeader !== false;
+
+    const hintsCheck = document.getElementById('setting-show-hints');
+    if (hintsCheck) hintsCheck.checked = s.showHints !== false;
+
+    const autoTermCheck = document.getElementById('setting-auto-terminal');
+    if (autoTermCheck) autoTermCheck.checked = s.autoOpenTerminal !== false;
+
+    const freeNavCheck = document.getElementById('setting-free-nav');
+    if (freeNavCheck) freeNavCheck.checked = s.allowFreeNav !== false;
+
+    const fontSelect = document.getElementById('setting-font-size');
+    if (fontSelect) fontSelect.value = s.editorFontSize || '14';
+  }
+
+  saveFeatureSettings() {
+    const newSettings = {
+      layoutMode: document.getElementById('setting-layout-mode').value,
+      showVirtualKeyboard: document.getElementById('setting-virtual-keyboard').value,
+      simplifiedHeader: document.getElementById('setting-simplified-header').checked,
+      showHints: document.getElementById('setting-show-hints').checked,
+      autoOpenTerminal: document.getElementById('setting-auto-terminal').checked,
+      allowFreeNav: document.getElementById('setting-free-nav').checked,
+      editorFontSize: parseInt(document.getElementById('setting-font-size').value, 10) || 14
+    };
+
+    adminStore.saveSettings(newSettings);
+    this.settings = newSettings;
+    this.showToast("Đã lưu cấu hình tính năng! Giao diện học sinh được cập nhật tức thì.");
+  }
+
+  // === 3. QUẢN LÝ GIÁO TRÌNH & BÀI HỌC ===
+  renderCurriculum(filterQuery = '') {
+    const container = document.getElementById('curriculum-accordion-container');
+    if (!container) return;
+
+    this.curriculum = adminStore.getCurriculum();
+    const query = filterQuery.toLowerCase().trim();
+
+    container.innerHTML = this.curriculum.map((mod, modIdx) => {
+      const filteredLessons = mod.lessons.filter(l => {
+        if (!query) return true;
+        return l.title.toLowerCase().includes(query) || (l.practice && l.practice.title.toLowerCase().includes(query));
+      });
+
+      if (query && filteredLessons.length === 0) return '';
+
+      const lessonsHtml = filteredLessons.map(lesson => {
+        const hasPractice = Boolean(lesson.practice);
+        return `
+          <div class="lesson-row" data-id="${lesson.id}">
+            <div class="lesson-meta">
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-orange);">${lesson.id}</span>
+              <span class="lesson-name">${this.escape(lesson.title)}</span>
+              <span style="font-size: 11px; color: var(--text-muted);">⏱ ${lesson.duration || '5 phút'}</span>
+              ${hasPractice ? '<span class="lesson-badge has-practice">🎯 Thử Thách</span>' : ''}
+            </div>
+            <div class="lesson-actions">
+              <button class="btn-icon-action btn-edit-lesson" data-id="${lesson.id}" title="Chỉnh sửa bài học">✏️</button>
+              <button class="btn-icon-action delete btn-delete-lesson" data-id="${lesson.id}" title="Xóa bài học">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="module-accordion" data-module-id="${mod.id}">
+          <div class="module-header">
+            <div class="module-title-box">
+              <span style="color: var(--accent-orange);">📁</span>
+              <span class="module-title">${this.escape(mod.title)}</span>
+              <span class="module-count">${filteredLessons.length} bài học</span>
+            </div>
+            <span style="color: var(--text-muted); font-size: 12px;">▼</span>
+          </div>
+          <div class="lesson-list">
+            ${lessonsHtml || '<div style="padding: 12px 18px; color: var(--text-dim); font-size: 13px;">Không có bài học nào trong chương này</div>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Sự kiện mở/đóng accordion
+    container.querySelectorAll('.module-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const list = header.nextElementSibling;
+        if (list) {
+          list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        }
+      });
+    });
+
+    // Sự kiện sửa & xóa bài học
+    container.querySelectorAll('.btn-edit-lesson').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openEditLessonModal(btn.dataset.id);
+      });
+    });
+
+    container.querySelectorAll('.btn-delete-lesson').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.confirmDeleteLesson(btn.dataset.id);
+      });
+    });
+  }
+
+  openAddLessonModal(defaultModuleId = null) {
+    const modal = document.getElementById('modal-lesson-editor');
+    const title = document.getElementById('lesson-modal-title');
+    title.textContent = '➕ Thêm Bài Học Mới';
+
+    document.getElementById('form-lesson-id').value = '';
+    document.getElementById('form-lesson-title').value = '';
+    document.getElementById('form-lesson-duration').value = '10 phút';
+    document.getElementById('form-lesson-theory').value = '';
+    document.getElementById('form-lesson-sample-code').value = '# Code Python mẫu:\n';
+    document.getElementById('form-practice-title').value = '';
+    document.getElementById('form-practice-desc').value = '';
+    document.getElementById('form-practice-init-code').value = '# Viết code của bạn tại đây:\n';
+    document.getElementById('form-practice-expected').value = '';
+    document.getElementById('form-practice-hint').value = '';
+
+    // Populate module select
+    const select = document.getElementById('form-module-select');
+    select.innerHTML = this.curriculum.map(m => `
+      <option value="${m.id}" ${m.id === defaultModuleId ? 'selected' : ''}>${this.escape(m.title)}</option>
+    `).join('');
+
+    modal.classList.add('show');
+  }
+
+  openEditLessonModal(lessonId) {
+    const found = adminStore.findLesson(lessonId);
+    if (!found) {
+      this.showToast("Không tìm thấy bài học!", true);
+      return;
+    }
+
+    const { lesson, module } = found;
+    const modal = document.getElementById('modal-lesson-editor');
+    const title = document.getElementById('lesson-modal-title');
+    title.textContent = `✏️ Chỉnh Sửa: ${lesson.title}`;
+
+    document.getElementById('form-lesson-id').value = lesson.id;
+    document.getElementById('form-lesson-title').value = lesson.title || '';
+    document.getElementById('form-lesson-duration').value = lesson.duration || '10 phút';
+    document.getElementById('form-lesson-theory').value = lesson.theory || '';
+    document.getElementById('form-lesson-sample-code').value = lesson.sampleCode || '';
+
+    // Module select
+    const select = document.getElementById('form-module-select');
+    select.innerHTML = this.curriculum.map(m => `
+      <option value="${m.id}" ${m.id === module.id ? 'selected' : ''}>${this.escape(m.title)}</option>
+    `).join('');
+
+    if (lesson.practice) {
+      document.getElementById('form-practice-title').value = lesson.practice.title || '';
+      document.getElementById('form-practice-desc').value = lesson.practice.description || '';
+      document.getElementById('form-practice-init-code').value = lesson.practice.initialCode || '';
+      const exp = lesson.practice.testCases && lesson.practice.testCases[0] ? lesson.practice.testCases[0].expected : '';
+      document.getElementById('form-practice-expected').value = exp;
+      document.getElementById('form-practice-hint').value = lesson.practice.hint || '';
+    } else {
+      document.getElementById('form-practice-title').value = '';
+      document.getElementById('form-practice-desc').value = '';
+      document.getElementById('form-practice-init-code').value = '';
+      document.getElementById('form-practice-expected').value = '';
+      document.getElementById('form-practice-hint').value = '';
+    }
+
+    modal.classList.add('show');
+  }
+
+  saveLessonForm() {
+    const lessonId = document.getElementById('form-lesson-id').value.trim();
+    const moduleId = document.getElementById('form-module-select').value;
+    const title = document.getElementById('form-lesson-title').value.trim();
+    const duration = document.getElementById('form-lesson-duration').value.trim() || '10 phút';
+    const theory = document.getElementById('form-lesson-theory').value;
+    const sampleCode = document.getElementById('form-lesson-sample-code').value;
+
+    if (!title) {
+      alert("Vui lòng nhập tiêu đề bài học!");
+      return;
+    }
+
+    const practiceTitle = document.getElementById('form-practice-title').value.trim();
+    let practice = null;
+    if (practiceTitle) {
+      practice = {
+        title: practiceTitle,
+        description: document.getElementById('form-practice-desc').value.trim(),
+        initialCode: document.getElementById('form-practice-init-code').value,
+        testCases: [
+          {
+            input: "",
+            expected: document.getElementById('form-practice-expected').value
+          }
+        ],
+        hint: document.getElementById('form-practice-hint').value.trim()
+      };
+    }
+
+    const lessonData = {
+      title,
+      duration,
+      theory,
+      sampleCode,
+      practice
+    };
+
+    if (lessonId) {
+      // Cập nhật
+      adminStore.updateLesson(lessonId, lessonData);
+      this.showToast(`Đã cập nhật bài học "${title}" thành công!`);
+    } else {
+      // Thêm mới
+      adminStore.addLesson(moduleId, lessonData);
+      this.showToast(`Đã thêm bài học "${title}" vào giáo trình!`);
+    }
+
+    this.closeLessonModal();
+    this.renderCurriculum();
+    this.loadOverview();
+  }
+
+  confirmDeleteLesson(lessonId) {
+    const found = adminStore.findLesson(lessonId);
+    if (!found) return;
+
+    if (confirm(`Bạn có chắc chắn muốn xóa bài học: "${found.lesson.title}" không?`)) {
+      adminStore.deleteLesson(lessonId);
+      this.showToast(`Đã xóa bài học ${lessonId}!`);
+      this.renderCurriculum();
+      this.loadOverview();
+    }
+  }
+
+  closeLessonModal() {
+    const modal = document.getElementById('modal-lesson-editor');
+    if (modal) modal.classList.remove('show');
+  }
+
+  // === 4. CẤU HÌNH GOOGLE DRIVE CMS ===
+  loadDriveConfig() {
+    const input = document.getElementById('admin-drive-url-input');
+    if (input) {
+      input.value = this.driveSync.getApiUrl();
+    }
+  }
+
+  async testDrivePing() {
+    const input = document.getElementById('admin-drive-url-input');
+    const url = input ? input.value.trim() : '';
+    const resBox = document.getElementById('drive-ping-result-box');
+    
+    if (!url) {
+      this.showToast("Chưa nhập đường dẫn Google Apps Script Web App!", true);
+      return;
+    }
+
+    resBox.style.display = 'block';
+    resBox.style.background = 'rgba(230, 219, 116, 0.1)';
+    resBox.style.border = '1px solid var(--accent-yellow)';
+    resBox.style.color = 'var(--accent-yellow)';
+    resBox.innerHTML = `⏳ Đang gửi yêu cầu Ping tới Google Apps Script...`;
+
+    const startTime = performance.now();
+    try {
+      const data = await this.driveSync.testConnection(url);
+      const latency = Math.round(performance.now() - startTime);
+
+      resBox.style.background = 'rgba(166, 226, 46, 0.1)';
+      resBox.style.border = '1px solid var(--accent-green)';
+      resBox.style.color = 'var(--accent-green)';
+      resBox.innerHTML = `
+        <div>✅ <strong>KẾT NỐI THÀNH CÔNG! (Độ trễ: ${latency}ms)</strong></div>
+        <div style="font-size: 12px; margin-top: 4px; color: var(--text-main);">${this.escape(data.message || JSON.stringify(data))}</div>
+      `;
+      this.showToast("Kết nối Google Drive hoàn toàn sẵn sàng!");
+    } catch (err) {
+      resBox.style.background = 'rgba(249, 38, 114, 0.1)';
+      resBox.style.border = '1px solid var(--accent-pink)';
+      resBox.style.color = 'var(--accent-pink)';
+      resBox.innerHTML = `
+        <div>❌ <strong>KẾT NỐI THẤT BẠI</strong></div>
+        <div style="font-size: 12px; margin-top: 4px; color: var(--text-main);">${this.escape(err.message)}</div>
+      `;
+      this.showToast("Lỗi kiểm tra Google Drive: " + err.message, true);
+    }
+  }
+
+  saveDriveUrl() {
+    const input = document.getElementById('admin-drive-url-input');
+    const url = input ? input.value.trim() : '';
+    this.driveSync.setApiUrl(url);
+    this.showToast("Đã lưu cấu hình Google Apps Script Web App!");
+    this.loadOverview();
+  }
+
+  async syncDriveNow() {
+    const btn = document.getElementById('btn-admin-sync-drive-now');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Đang đồng bộ...</span>';
+    }
+
+    try {
+      const res = await this.driveSync.syncFromDrive();
+      this.showToast(res.message);
+      this.loadOverview();
+      this.renderCurriculum();
+    } catch (err) {
+      this.showToast("Lỗi bốc tách: " + err.message, true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🔄 Bốc Tách Dữ Liệu Ngay</span>';
+      }
+    }
+  }
+
+  // === 5. QUẢN LÝ HỌC SINH & BÀI NỘP ===
+  loadStudentSubmissions() {
+    const tbody = document.getElementById('tbody-all-submissions');
+    if (!tbody) return;
+
+    const logs = adminStore.getSubmissionLogs();
+    const query = (document.getElementById('input-search-students')?.value || '').toLowerCase().trim();
+    const statusFilter = document.getElementById('filter-submission-status')?.value || 'all';
+
+    const filtered = logs.filter(item => {
+      const matchQuery = !query || 
+        (item.studentName && item.studentName.toLowerCase().includes(query)) ||
+        (item.studentId && item.studentId.toLowerCase().includes(query)) ||
+        (item.className && item.className.toLowerCase().includes(query));
+
+      const matchStatus = statusFilter === 'all' || 
+        (statusFilter === 'passed' && item.passed) ||
+        (statusFilter === 'failed' && !item.passed);
+
+      return matchQuery && matchStatus;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+            Không có dữ liệu bài nộp nào phù hợp.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(item => {
+      const timeStr = new Date(item.timestamp).toLocaleString('vi-VN');
+      const passClass = item.passed ? 'pass' : 'fail';
+      const passText = item.passed ? '🌟 ĐẠT' : '⚠️ CHƯA ĐẠT';
+
+      return `
+        <tr>
+          <td><span style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">${timeStr}</span></td>
+          <td><code>${this.escape(item.studentId || 'HS-001')}</code></td>
+          <td><strong>${this.escape(item.studentName || 'Học sinh')}</strong></td>
+          <td>${this.escape(item.className || 'Tự do')}</td>
+          <td><span style="color: var(--accent-yellow); font-family: var(--font-mono);">${this.escape(item.exerciseId || '')}</span></td>
+          <td><strong style="color: ${item.passed ? 'var(--accent-green)' : 'var(--accent-pink)'}">${item.score || 0}đ</strong></td>
+          <td><span class="score-badge ${passClass}">${passText}</span></td>
+          <td>
+            <button class="btn-admin-secondary btn-view-sub-code" data-id="${item.id}" style="padding: 4px 8px; font-size: 11.5px;">
+              👁️ Xem Mã Code
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-view-sub-code').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.openViewSubmissionModal(btn.dataset.id);
+      });
+    });
+  }
+
+  openViewSubmissionModal(submissionId) {
+    const logs = adminStore.getSubmissionLogs();
+    const item = logs.find(l => l.id === submissionId);
+    if (!item) return;
+
+    const modal = document.getElementById('modal-view-submission');
+    const metaBox = document.getElementById('submission-meta-info');
+    const codePre = document.getElementById('submission-code-content');
+
+    metaBox.innerHTML = `
+      <div style="margin-bottom: 8px;">
+        Học sinh: <strong>${this.escape(item.studentName)}</strong> (${this.escape(item.studentId)}) - Lớp: <strong>${this.escape(item.className)}</strong>
+      </div>
+      <div style="margin-bottom: 12px;">
+        Bài tập: <code>${this.escape(item.exerciseId)}</code> | Điểm: <strong style="color: ${item.passed ? 'var(--accent-green)' : 'var(--accent-pink)'}">${item.score}đ (${item.passed ? 'ĐẠT' : 'CHƯA ĐẠT'})</strong> | Lúc: ${new Date(item.timestamp).toLocaleString('vi-VN')}
+      </div>
+    `;
+
+    codePre.textContent = item.submittedCode || '# Học sinh không có nội dung code';
+    modal.classList.add('show');
+  }
+
+  exportGradesCSV() {
+    const logs = adminStore.getSubmissionLogs();
+    if (logs.length === 0) {
+      this.showToast("Chưa có bài nộp nào để xuất báo cáo!", true);
+      return;
+    }
+
+    const headers = ["Thời Gian", "Mã Học Sinh", "Họ Và Tên", "Lớp", "Bài Tập", "Điểm Số", "Đạt Yêu Cầu"];
+    const rows = logs.map(l => [
+      `"${new Date(l.timestamp).toLocaleString('vi-VN')}"`,
+      `"${l.studentId || ''}"`,
+      `"${l.studentName || ''}"`,
+      `"${l.className || ''}"`,
+      `"${l.exerciseId || ''}"`,
+      l.score || 0,
+      l.passed ? "ĐẠT" : "CHƯA ĐẠT"
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Bang_Diem_PySublime_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    this.showToast("Đã xuất file bảng điểm CSV thành công!");
+  }
+
+  // === 6. SỰ KIỆN NÚT HÀNH ĐỘNG KHÁC ===
+  bindActionButtons() {
+    // Lưu tính năng
+    document.getElementById('btn-save-feature-settings')?.addEventListener('click', () => {
+      this.saveFeatureSettings();
+    });
+
+    // Thêm bài học mới
+    document.getElementById('btn-add-new-lesson')?.addEventListener('click', () => {
+      this.openAddLessonModal();
+    });
+    document.getElementById('btn-quick-add-lesson')?.addEventListener('click', () => {
+      this.openAddLessonModal();
+    });
+
+    // Form modal
+    document.getElementById('btn-close-lesson-modal')?.addEventListener('click', () => this.closeLessonModal());
+    document.getElementById('btn-cancel-lesson-form')?.addEventListener('click', () => this.closeLessonModal());
+    document.getElementById('btn-save-lesson-form')?.addEventListener('click', () => this.saveLessonForm());
+
+    // Xem code modal
+    document.getElementById('btn-close-sub-modal')?.addEventListener('click', () => {
+      document.getElementById('modal-view-submission')?.classList.remove('show');
+    });
+    document.getElementById('btn-close-sub-modal-2')?.addEventListener('click', () => {
+      document.getElementById('modal-view-submission')?.classList.remove('show');
+    });
+
+    // Tìm kiếm bài học
+    document.getElementById('input-search-lessons')?.addEventListener('input', (e) => {
+      this.renderCurriculum(e.target.value);
+    });
+
+    // Reset giáo trình gốc
+    document.getElementById('btn-reset-default-curriculum')?.addEventListener('click', () => {
+      if (confirm("Bạn có chắc chắn muốn khôi phục lại giáo trình mẫu HowKteam chuẩn gốc không? Tất cả bài thêm/sửa tùy biến sẽ bị đặt lại!")) {
+        adminStore.resetCurriculumToDefault();
+        this.renderCurriculum();
+        this.loadOverview();
+        this.showToast("Đã khôi phục giáo trình mặc định thành công!");
+      }
+    });
+
+    // Xuất giáo trình JSON
+    document.getElementById('btn-export-curriculum-json')?.addEventListener('click', () => {
+      const data = adminStore.getCurriculum();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pysublime_curriculum_${Date.now()}.json`;
+      a.click();
+      this.showToast("Đã tải về file JSON giáo trình!");
+    });
+
+    // Nhập giáo trình JSON
+    const fileInput = document.getElementById('input-import-json-file');
+    document.getElementById('btn-import-curriculum-json')?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            adminStore.saveCurriculum(parsed);
+            this.renderCurriculum();
+            this.loadOverview();
+            this.showToast("Đã nhập giáo trình mới từ file JSON thành công!");
+          } else {
+            throw new Error("Cấu trúc file JSON không hợp lệ (cần danh sách module)");
+          }
+        } catch (err) {
+          this.showToast("Lỗi đọc file: " + err.message, true);
+        }
+      };
+      reader.readAsText(file);
+      fileInput.value = '';
+    });
+
+    // Google Drive
+    document.getElementById('btn-admin-test-drive')?.addEventListener('click', () => this.testDrivePing());
+    document.getElementById('btn-admin-save-drive')?.addEventListener('click', () => this.saveDriveUrl());
+    document.getElementById('btn-admin-sync-drive-now')?.addEventListener('click', () => this.syncDriveNow());
+    document.getElementById('btn-quick-sync-drive')?.addEventListener('click', () => {
+      document.getElementById('menu-btn-drive')?.click();
+      this.syncDriveNow();
+    });
+
+    // Quick buttons
+    document.getElementById('btn-quick-open-settings')?.addEventListener('click', () => {
+      document.getElementById('menu-btn-features')?.click();
+    });
+
+    document.getElementById('btn-quick-export-grades')?.addEventListener('click', () => {
+      this.exportGradesCSV();
+    });
+
+    // Học sinh & Bảng điểm
+    document.getElementById('btn-export-grades-csv')?.addEventListener('click', () => this.exportGradesCSV());
+    document.getElementById('input-search-students')?.addEventListener('input', () => this.loadStudentSubmissions());
+    document.getElementById('filter-submission-status')?.addEventListener('change', () => this.loadStudentSubmissions());
+
+    document.getElementById('btn-clear-all-submissions')?.addEventListener('click', () => {
+      if (confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử điểm số và bài nộp của học sinh không? Hành động này không thể hoàn tác!")) {
+        adminStore.clearSubmissionLogs();
+        this.loadStudentSubmissions();
+        this.loadOverview();
+        this.showToast("Đã xóa toàn bộ lịch sử bài nộp học sinh!");
+      }
+    });
+  }
+
+  escape(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+}
+
+// Khởi chạy khi DOM sẵn sàng
+window.addEventListener('DOMContentLoaded', () => {
+  const admin = new AdminController();
+  admin.init();
+  window.__ADMIN = admin;
+});

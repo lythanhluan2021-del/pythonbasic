@@ -1,0 +1,1080 @@
+/* ==========================================================================
+   PySublime Mobile Learning - Sublime Text Monokai Design System
+   ========================================================================== */
+
+:root {
+  /* Sublime Text Monokai Theme Palette */
+  --sublime-bg: #272822;
+  --sublime-sidebar: #1e1f1c;
+  --sublime-header: #191a18;
+  --sublime-tab-active: #272822;
+  --sublime-tab-inactive: #1a1b18;
+  --sublime-status-bg: #171714;
+  --sublime-border: #3e3d32;
+  --sublime-hover: #3e3d32;
+  
+  /* Monokai Syntax & Accent Colors */
+  --monokai-fg: #f8f8f2;
+  --monokai-gray: #88846f;
+  --monokai-comment: #75715e;
+  --monokai-pink: #f92672;
+  --monokai-green: #a6e22e;
+  --monokai-yellow: #e6db74;
+  --monokai-orange: #fd971f;
+  --monokai-cyan: #66d9ef;
+  --monokai-purple: #ae81ff;
+
+  /* UI Tokens */
+  --font-code: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  --font-ui: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-ui);
+  background-color: var(--sublime-sidebar);
+  color: var(--monokai-fg);
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === TOP HEADER & NAVIGATION === */
+.app-header {
+  height: 52px;
+  background-color: var(--sublime-header);
+  border-bottom: 1px solid var(--sublime-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--monokai-orange), var(--monokai-pink));
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(253, 151, 31, 0.4);
+}
+
+.brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--monokai-fg);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brand-badge {
+  font-size: 10px;
+  background: rgba(166, 226, 46, 0.15);
+  color: var(--monokai-green);
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(166, 226, 46, 0.3);
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-header {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-fg);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-header:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--monokai-orange);
+}
+
+.btn-drive.connected {
+  border-color: var(--monokai-green);
+  color: var(--monokai-green);
+  background: rgba(166, 226, 46, 0.1);
+}
+
+/* === MOBILE VIEW SWITCHER TABS === */
+.mobile-view-nav {
+  display: flex;
+  background-color: var(--sublime-header);
+  border-bottom: 1px solid var(--sublime-border);
+  flex-shrink: 0;
+}
+
+.nav-tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  color: var(--monokai-gray);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-btn.active {
+  color: var(--monokai-orange);
+  border-bottom-color: var(--monokai-orange);
+  background: rgba(253, 151, 31, 0.05);
+}
+
+.nav-tab-btn .badge-count {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+/* === MAIN WORKSPACE CONTAINER === */
+.workspace-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Desktop layout: Split view, Mobile: Tab view */
+.view-panel {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sublime-bg);
+}
+
+.view-panel.active {
+  display: flex;
+}
+
+/* === VIEW 1: LÝ THUYẾT & LỘ TRÌNH === */
+#panel-theory {
+  background-color: #1e1f1c;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.theory-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.lesson-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--sublime-header);
+  border: 1px solid var(--sublime-border);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.lesson-select-dropdown {
+  background: var(--sublime-bg);
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-yellow);
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  max-width: 65%;
+}
+
+.lesson-content-card {
+  background: var(--sublime-bg);
+  border: 1px solid var(--sublime-border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.lesson-content-card h1 {
+  font-size: 20px;
+  color: var(--monokai-orange);
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--sublime-border);
+  padding-bottom: 8px;
+}
+
+.lesson-content-card h3 {
+  font-size: 15px;
+  color: var(--monokai-cyan);
+  margin: 14px 0 8px 0;
+}
+
+.lesson-content-card p {
+  font-size: 14px;
+  color: #d6d6d0;
+  margin-bottom: 10px;
+}
+
+.lesson-content-card ul, .lesson-content-card ol {
+  padding-left: 20px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #d6d6d0;
+}
+
+.lesson-content-card li {
+  margin-bottom: 6px;
+}
+
+.lesson-content-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 13px;
+}
+
+.lesson-content-card th, .lesson-content-card td {
+  border: 1px solid var(--sublime-border);
+  padding: 8px;
+  text-align: left;
+}
+
+.lesson-content-card th {
+  background: var(--sublime-header);
+  color: var(--monokai-yellow);
+}
+
+.code-preview-box {
+  background: #191a18;
+  border: 1px solid var(--sublime-border);
+  border-radius: var(--radius-sm);
+  margin: 14px 0;
+  overflow: hidden;
+}
+
+.code-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #141512;
+  border-bottom: 1px solid var(--sublime-border);
+}
+
+.code-lang-tag {
+  font-size: 11px;
+  color: var(--monokai-comment);
+  font-family: var(--font-code);
+  font-weight: 600;
+}
+
+.btn-open-in-ide {
+  background: var(--monokai-green);
+  color: #171714;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-open-in-ide:hover {
+  filter: brightness(1.1);
+}
+
+.code-snippet-pre {
+  padding: 12px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  color: var(--monokai-fg);
+  overflow-x: auto;
+  line-height: 1.45;
+}
+
+.practice-card {
+  background: linear-gradient(180deg, rgba(253, 151, 31, 0.08) 0%, rgba(39, 40, 34, 0.95) 100%);
+  border: 1px solid rgba(253, 151, 31, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.practice-title {
+  color: var(--monokai-orange);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.btn-start-practice {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--monokai-orange), var(--monokai-pink));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(249, 38, 114, 0.3);
+}
+
+/* === VIEW 2: SUBLIME TEXT IDE === */
+#panel-ide {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sublime Tabs Header */
+.sublime-tabs-bar {
+  height: 38px;
+  background: var(--sublime-sidebar);
+  border-bottom: 1px solid var(--sublime-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  overflow-x: auto;
+}
+
+.sublime-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.sublime-tab {
+  height: 32px;
+  background: var(--sublime-tab-inactive);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-top-left-radius: var(--radius-sm);
+  border-top-right-radius: var(--radius-sm);
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--font-code);
+  color: var(--monokai-gray);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.sublime-tab.active {
+  background: var(--sublime-tab-active);
+  color: var(--monokai-fg);
+  border-color: var(--sublime-border);
+  border-top: 2px solid var(--monokai-orange);
+}
+
+.tab-dot {
+  color: var(--monokai-orange);
+  font-size: 9px;
+}
+
+.tab-close {
+  color: var(--monokai-gray);
+  font-size: 14px;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-run-code {
+  background: var(--monokai-green);
+  color: #171714;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(166, 226, 46, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-run-code:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.btn-run-code:active {
+  transform: translateY(1px);
+}
+
+/* Ace Editor Container */
+.sublime-editor-box {
+  flex: 1;
+  position: relative;
+  background: var(--sublime-bg);
+}
+
+#ace-editor-instance {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-family: var(--font-code);
+  font-size: 14px;
+}
+
+/* === BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI (VIRTUAL ACCESSORY BAR) === */
+.mobile-virtual-keyboard {
+  background: #141512;
+  border-top: 1px solid var(--sublime-border);
+  padding: 6px 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+  z-index: 50;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.mobile-virtual-keyboard::-webkit-scrollbar {
+  display: none;
+}
+
+.vk-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding-right: 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vk-btn {
+  background: #272822;
+  border: 1px solid #3e3d32;
+  color: var(--monokai-fg);
+  font-family: var(--font-code);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 38px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.vk-btn:active {
+  background: var(--monokai-orange);
+  color: #171714;
+  transform: scale(0.95);
+}
+
+.vk-btn.highlight {
+  background: rgba(253, 151, 31, 0.15);
+  color: var(--monokai-orange);
+  border-color: rgba(253, 151, 31, 0.4);
+}
+
+.vk-btn.nav {
+  background: rgba(102, 217, 239, 0.12);
+  color: var(--monokai-cyan);
+  border-color: rgba(102, 217, 239, 0.3);
+}
+
+.vk-btn.action {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--monokai-yellow);
+}
+
+/* Sublime Status Bar */
+.sublime-status-bar {
+  height: 24px;
+  background: var(--sublime-status-bg);
+  border-top: 1px solid #20201d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 11px;
+  font-family: var(--font-code);
+  color: var(--monokai-gray);
+  user-select: none;
+  flex-shrink: 0;
+  padding-bottom: var(--safe-bottom);
+}
+
+.sublime-status-bar .status-left,
+.sublime-status-bar .status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* === VIEW 3: TERMINAL & KẾT QUẢ CHẤM ĐIỂM === */
+#panel-terminal {
+  display: flex;
+  flex-direction: column;
+  background: #141512;
+}
+
+.terminal-header {
+  height: 38px;
+  background: var(--sublime-sidebar);
+  border-bottom: 1px solid var(--sublime-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.terminal-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--monokai-cyan);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-term-action {
+  background: none;
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-gray);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.btn-term-action:hover {
+  color: var(--monokai-fg);
+  border-color: var(--monokai-fg);
+}
+
+.terminal-screen {
+  flex: 1;
+  padding: 12px;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #f8f8f2;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #141512;
+}
+
+.term-line-output {
+  color: #a6e22e;
+}
+
+.term-line-error {
+  color: #f92672;
+  background: rgba(249, 38, 114, 0.08);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  margin: 4px 0;
+}
+
+.term-line-info {
+  color: #66d9ef;
+}
+
+/* Test case grading results */
+.test-results-panel {
+  background: #1e1f1c;
+  border-top: 1px solid var(--sublime-border);
+  padding: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.test-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.test-score-badge {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.test-score-badge.pass {
+  background: rgba(166, 226, 46, 0.2);
+  color: var(--monokai-green);
+  border: 1px solid var(--monokai-green);
+}
+
+.test-score-badge.fail {
+  background: rgba(249, 38, 114, 0.2);
+  color: var(--monokai-pink);
+  border: 1px solid var(--monokai-pink);
+}
+
+.test-item-card {
+  background: #272822;
+  border: 1px solid var(--sublime-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: var(--font-code);
+}
+
+.test-item-card.passed {
+  border-left: 3px solid var(--monokai-green);
+}
+
+.test-item-card.failed {
+  border-left: 3px solid var(--monokai-pink);
+}
+
+/* === MODALS (GOOGLE DRIVE SYNC & STUDENT PROFILE) === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-dialog {
+  background: #1e1f1c;
+  border: 1px solid var(--sublime-border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  padding: 14px 16px;
+  background: var(--sublime-header);
+  border-bottom: 1px solid var(--sublime-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  color: var(--monokai-orange);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--monokai-gray);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 16px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--monokai-yellow);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: #141512;
+  border: 1px solid var(--sublime-border);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  border-color: var(--monokai-orange);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--monokai-comment);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  background: var(--sublime-header);
+  border-top: 1px solid var(--sublime-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--sublime-border);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--monokai-green);
+  color: #171714;
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* === MOBILE INTERACTIVE INPUT PROMPT MODAL === */
+.input-prompt-box {
+  background: #1e1f1c;
+  border: 2px solid var(--monokai-cyan);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin: 10px 0;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.prompt-text {
+  font-size: 13px;
+  font-family: var(--font-code);
+  color: var(--monokai-cyan);
+  margin-bottom: 8px;
+}
+
+.prompt-form {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-input {
+  flex: 1;
+  background: #141512;
+  border: 1px solid var(--sublime-border);
+  color: #fff;
+  padding: 8px 10px;
+  font-family: var(--font-code);
+  font-size: 14px;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.btn-prompt-submit {
+  background: var(--monokai-cyan);
+  color: #171714;
+  font-weight: 700;
+  border: none;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* === NÚT HÀNH ĐỘNG THANH CÔNG CỤ IDE === */
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-action-toolbar {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-run-code {
+  background: var(--monokai-green);
+  color: #171714;
+}
+
+.btn-run-code:hover {
+  background: #bbf048;
+  transform: translateY(-1px);
+}
+
+.btn-submit-code {
+  background: rgba(166, 226, 46, 0.15);
+  border: 1px solid rgba(166, 226, 46, 0.4);
+  color: var(--monokai-green);
+}
+
+.btn-submit-code:hover {
+  background: var(--monokai-green);
+  color: #171714;
+}
+
+.btn-toggle-term-btn {
+  background: rgba(102, 217, 239, 0.12);
+  border: 1px solid rgba(102, 217, 239, 0.35);
+  color: var(--monokai-cyan);
+}
+
+.btn-toggle-term-btn:hover {
+  background: rgba(102, 217, 239, 0.25);
+}
+
+.btn-admin-link {
+  background: rgba(253, 151, 31, 0.15) !important;
+  border-color: rgba(253, 151, 31, 0.4) !important;
+  color: var(--monokai-orange) !important;
+  text-decoration: none;
+  font-weight: 700 !important;
+}
+
+.btn-admin-link:hover {
+  background: var(--monokai-orange) !important;
+  color: #171714 !important;
+  box-shadow: 0 2px 8px rgba(253, 151, 31, 0.4);
+}
+
+/* === BÀN PHÍM ẢO: TỰ ĐỘNG ẨN TRÊN MÁY TÍNH === */
+@media (min-width: 768px) {
+  body:not(.show-vk-always) .mobile-virtual-keyboard {
+    display: none !important;
+  }
+}
+
+body.hide-vk-always .mobile-virtual-keyboard {
+  display: none !important;
+}
+
+body.show-vk-always .mobile-virtual-keyboard {
+  display: flex !important;
+}
+
+/* Header tinh gọn */
+body.simplified-header #btn-open-drive-modal {
+  display: none !important;
+}
+
+/* === BỐ CỤC LINH HOẠT TRÊN MÁY TÍNH & DI ĐỘNG === */
+.ide-terminal-wrapper {
+  display: contents; /* Mặc định trên di động */
+}
+
+/* Màn hình lớn (Desktop >= 992px) */
+@media (min-width: 992px) {
+  .mobile-view-nav {
+    display: none;
+  }
+
+  /* 1. Chế độ Tinh Gọn (Simple 2-Panel Layout) - MẶC ĐỊNH */
+  .workspace-container.layout-simple {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .workspace-container.layout-simple #panel-theory {
+    width: 380px;
+    flex-shrink: 0;
+    display: flex !important;
+    border-right: 1px solid var(--sublime-border);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .workspace-container.layout-simple #panel-theory.collapsed {
+    display: none !important;
+  }
+
+  .workspace-container.layout-simple .ide-terminal-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .workspace-container.layout-simple #panel-ide {
+    flex: 1;
+    display: flex !important;
+    min-height: 220px;
+    border-right: none;
+  }
+
+  .workspace-container.layout-simple #panel-terminal {
+    display: flex !important;
+    height: 260px;
+    min-height: 38px;
+    border-right: none;
+    border-top: 2px solid var(--sublime-border);
+    transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .workspace-container.layout-simple #panel-terminal.collapsed {
+    height: 38px !important;
+    overflow: hidden;
+  }
+
+  .workspace-container.layout-simple #panel-terminal.collapsed .terminal-screen,
+  .workspace-container.layout-simple #panel-terminal.collapsed .test-results-panel {
+    display: none !important;
+  }
+
+  .workspace-container.layout-simple #panel-terminal.expanded-full {
+    height: 75% !important;
+  }
+
+  /* 2. Chế độ 3 Cột (Split 3-Column Layout) */
+  .workspace-container.layout-split {
+    display: grid;
+    grid-template-columns: 320px 1fr 360px;
+  }
+
+  .workspace-container.layout-split .ide-terminal-wrapper {
+    display: contents;
+  }
+
+  .workspace-container.layout-split .view-panel {
+    display: flex !important;
+    border-right: 1px solid var(--sublime-border);
+  }
+
+  .workspace-container.layout-split #panel-terminal {
+    border-right: none;
+  }
+}

@@ -170,28 +170,71 @@ export class PyodideRunner {
   /**
    * Làm sạch thông báo lỗi Python cho học sinh dễ hiểu bằng tiếng Việt
    */
+  /**
+   * Bác Sĩ Python Thông Minh: Phân tích & Chuẩn đoán lỗi dễ hiểu bằng tiếng Việt cho học sinh
+   */
   formatErrorMessage(rawMsg) {
-    if (!rawMsg) return "Lỗi không xác định";
+    if (!rawMsg) return "Lỗi không xác định khi thực thi mã nguồn";
 
     let msg = rawMsg;
-    // Bỏ qua các stack trace phức tạp của pyodide
     if (msg.includes("Traceback (most recent call last):")) {
       const parts = msg.split("Traceback (most recent call last):");
-      msg = parts[parts.length - 1];
+      msg = parts[parts.length - 1].trim();
     }
 
-    // Dịch các lỗi phổ biến sang gợi ý tiếng Việt dễ hiểu
+    // 1. Lỗi thụt đầu dòng (IndentationError)
     if (msg.includes("IndentationError")) {
-      return msg + "\n💡 [Gợi ý]: Lỗi thụt đầu dòng (Indentation). Hãy dùng phím [Tab] hoặc [Indent+] trên bàn phím ảo để căn lề 4 khoảng trắng chuẩn Python.";
+      return msg + "\n\n💡 [Bác Sĩ Python]: Lỗi thụt đầu dòng (Indentation).\n👉 Khắc phục: Các lệnh con sau if, for, while, def bắt buộc phải thụt vào 4 khoảng trắng. Hãy dùng phím [Tab] trên bàn phím ảo để căn lề chuẩn.";
     }
+
+    // 2. Lỗi cú pháp (SyntaxError)
     if (msg.includes("SyntaxError")) {
-      return msg + "\n💡 [Gợi ý]: Lỗi cú pháp. Hãy kiểm tra xem bạn có quên dấu hai chấm [ : ] sau lệnh if/for/while/def hoặc thiếu đóng ngoặc không.";
+      if (msg.includes("expected ':'") || msg.includes("invalid syntax") && (msg.includes("if") || msg.includes("for") || msg.includes("while") || msg.includes("def"))) {
+        return msg + "\n\n💡 [Bác Sĩ Python]: Thiếu dấu hai chấm [ : ]!\n👉 Khắc phục: Cuối mỗi câu lệnh `if điều_kiện:`, `for item in list:`, `while điều_kiện:`, `def ten_ham():` bắt buộc phải có dấu hai chấm [ : ].";
+      }
+      if (msg.includes("unexpected EOF while parsing") || msg.includes("was never closed")) {
+        return msg + "\n\n💡 [Bác Sĩ Python]: Thiếu dấu đóng ngoặc hoặc nháy kép!\n👉 Khắc phục: Bạn đang mở ngoặc `(` hoặc nháy `\"` nhưng chưa đóng ngoặc `)` hoặc `\"` tương ứng.";
+      }
+      return msg + "\n\n💡 [Bác Sĩ Python]: Lỗi cú pháp (SyntaxError).\n👉 Khắc phục: Hãy kiểm tra kỹ xem có dấu hai chấm [ : ], ngoặc tròn `()`, ngoặc kép `\"\"` hoặc nhầm dấu gán `=` với so sánh `==` không.";
     }
+
+    // 3. Lỗi gọi sai tên biến/hàm (NameError)
     if (msg.includes("NameError")) {
-      return msg + "\n💡 [Gợi ý]: Biến chưa được định nghĩa. Hãy kiểm tra lại xem tên biến có bị viết sai chính tả hoặc gõ chữ hoa/thường lệch không.";
+      if (msg.includes("'Print'") || msg.includes("'PRINT'")) {
+        return msg + "\n\n💡 [Bác Sĩ Python]: Sai chữ hoa/thường!\n👉 Khắc phục: Trong Python hàm in phải viết thường toàn bộ là `print(...)`, không được viết hoa `Print(...)`.";
+      }
+      if (msg.includes("'Input'") || msg.includes("'INPUT'")) {
+        return msg + "\n\n💡 [Bác Sĩ Python]: Sai chữ hoa/thường!\n👉 Khắc phục: Hàm nhập liệu phải viết thường toàn bộ là `input(...)`, không được viết `Input(...)`.";
+      }
+      return msg + "\n\n💡 [Bác Sĩ Python]: Tên biến hoặc hàm chưa được định nghĩa!\n👉 Khắc phục: Bạn hãy kiểm tra xem biến này đã được gán giá trị trước đó chưa, hoặc có bị gõ sai chính tả / lệch chữ hoa-thường không.";
     }
+
+    // 4. Lỗi kiểu dữ liệu (TypeError)
     if (msg.includes("TypeError")) {
-      return msg + "\n💡 [Gợi ý]: Lỗi kiểu dữ liệu. Nhớ dùng int() hoặc float() khi tính toán số học với dữ liệu từ input().";
+      if (msg.includes("can only concatenate str") || msg.includes("unsupported operand type")) {
+        return msg + "\n\n💡 [Bác Sĩ Python]: Không thể tính toán giữa chuỗi chữ và số!\n👉 Khắc phục: Dữ liệu từ `input()` mặc định là chuỗi chữ (str). Bạn cần ép kiểu sang số: `int(input())` hoặc `float(input())` trước khi cộng/trừ/nhân/chia.";
+      }
+      return msg + "\n\n💡 [Bác Sĩ Python]: Lỗi kiểu dữ liệu (TypeError).\n👉 Khắc phục: Hãy kiểm tra các biến và tham số xem có đúng kiểu số (int/float) hoặc chuỗi (str) chưa.";
+    }
+
+    // 5. Lỗi chia cho số không (ZeroDivisionError)
+    if (msg.includes("ZeroDivisionError")) {
+      return msg + "\n\n💡 [Bác Sĩ Python]: Lỗi toán học - Phép chia cho số 0!\n👉 Khắc phục: Mẫu số trong phép chia `/`, `//` hoặc `%` không được bằng 0.";
+    }
+
+    // 6. Lỗi tràn danh sách (IndexError)
+    if (msg.includes("IndexError")) {
+      return msg + "\n\n💡 [Bác Sĩ Python]: Vị trí phần tử (Index) vượt quá độ dài của Danh sách!\n👉 Khắc phục: Trong Python, vị trí phần tử đầu tiên bắt đầu từ số 0. Ví dụ danh sách có 3 phần tử thì chỉ có vị trí 0, 1, 2.";
+    }
+
+    // 7. Lỗi khóa từ điển (KeyError)
+    if (msg.includes("KeyError")) {
+      return msg + "\n\n💡 [Bác Sĩ Python]: Khóa (Key) này không có trong Từ điển (Dictionary)!\n👉 Khắc phục: Hãy kiểm tra lại tên Key trong từ điển xem có chính xác từng chữ hoa/thường không.";
+    }
+
+    // 8. Lỗi giá trị chuyển đổi (ValueError)
+    if (msg.includes("ValueError")) {
+      return msg + "\n\n💡 [Bác Sĩ Python]: Lỗi giá trị (ValueError).\n👉 Khắc phục: Hàm `int()` hoặc `float()` không thể chuyển đổi một chuỗi chứa chữ cái thành số được.";
     }
 
     return msg;

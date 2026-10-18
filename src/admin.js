@@ -116,8 +116,9 @@ class AdminController {
       }
     }
 
-    // Render danh sách gần đây
+    // Render danh sách gần đây & Bảng vàng vinh danh
     this.renderRecentSubmissions();
+    this.renderLeaderboard();
   }
 
   renderRecentSubmissions() {
@@ -164,6 +165,115 @@ class AdminController {
         this.openViewSubmissionModal(id);
       });
     });
+  }
+
+  renderLeaderboard() {
+    const container = document.getElementById('leaderboard-students-container');
+    if (!container) return;
+
+    const logs = adminStore.getSubmissionLogs();
+    if (!logs || logs.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 32px 20px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🌟</div>
+          <div style="font-weight: 700; font-size: 15px; color: var(--text-main); margin-bottom: 4px;">
+            Bảng Vàng Chưa Có Dữ Liệu
+          </div>
+          <div style="font-size: 13px;">
+            Khi học sinh hoàn thành các thử thách Python trên IDE, top học sinh xuất sắc nhất sẽ được vinh danh tự động tại đây!
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Nhóm bài làm theo từng học sinh
+    const studentMap = new Map();
+    logs.forEach(log => {
+      const key = log.studentId || log.studentName || 'Ẩn danh';
+      if (!studentMap.has(key)) {
+        studentMap.set(key, {
+          id: log.studentId || '',
+          name: log.studentName || 'Học sinh',
+          className: log.className || 'Tự do',
+          passedExercises: new Set(),
+          maxScores: new Map(),
+          totalSubmissions: 0,
+          lastActive: log.timestamp
+        });
+      }
+
+      const st = studentMap.get(key);
+      st.totalSubmissions++;
+      if (log.timestamp > st.lastActive) {
+        st.lastActive = log.timestamp;
+      }
+      if (log.className && st.className === 'Tự do') {
+        st.className = log.className;
+      }
+
+      const currentScore = log.score || 0;
+      const prevScore = st.maxScores.get(log.exerciseId) || 0;
+      if (currentScore > prevScore) {
+        st.maxScores.set(log.exerciseId, currentScore);
+      }
+
+      if (log.passed) {
+        st.passedExercises.add(log.exerciseId);
+      }
+    });
+
+    const ranked = Array.from(studentMap.values()).map(st => {
+      let totalScore = 0;
+      st.maxScores.forEach(val => totalScore += val);
+      return {
+        id: st.id,
+        name: st.name,
+        className: st.className,
+        passedCount: st.passedExercises.size,
+        totalScore: totalScore,
+        totalSubmissions: st.totalSubmissions,
+        lastActive: st.lastActive
+      };
+    });
+
+    // Sắp xếp: Số bài đạt DESC, Tổng điểm DESC
+    ranked.sort((a, b) => {
+      if (b.passedCount !== a.passedCount) return b.passedCount - a.passedCount;
+      return b.totalScore - a.totalScore;
+    });
+
+    const topStudents = ranked.slice(0, 6);
+    const medals = ['🥇', '🥈', '🥉', '🎖️', '🎖️', '🎖️'];
+    const rankTitles = ['Thủ Khoa', 'Á Khoa', 'Top 3 Xuất Sắc', 'Top 4', 'Top 5', 'Top 6'];
+
+    container.innerHTML = `
+      <div class="leaderboard-grid">
+        ${topStudents.map((st, idx) => {
+          const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+          const medal = medals[idx] || '🎖️';
+          const title = rankTitles[idx] || `Hạng ${idx + 1}`;
+          return `
+            <div class="leaderboard-card ${rankClass}">
+              <div class="leaderboard-rank-badge" title="${title}">
+                ${medal}
+              </div>
+              <div class="leaderboard-info">
+                <div class="leaderboard-name" title="${this.escape(st.name)}">${this.escape(st.name)}</div>
+                <div class="leaderboard-meta">
+                  <span>🏫 Lớp: <strong>${this.escape(st.className)}</strong></span>
+                  ${st.id ? `<span>• <code>${this.escape(st.id)}</code></span>` : ''}
+                </div>
+                <div class="leaderboard-stats">
+                  <span class="stat-pill passed">🎯 ${st.passedCount} bài đạt</span>
+                  <span class="stat-pill score">⚡ ${st.totalScore} XP</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   }
 
   // === 2. QUẢN LÝ TÍNH NĂNG (FEATURE SETTINGS) ===
@@ -586,15 +696,71 @@ class AdminController {
     modal.classList.add('show');
   }
 
-  exportGradesCSV() {
+  exportGrades() {
     const logs = adminStore.getSubmissionLogs();
-    if (logs.length === 0) {
+    if (!logs || logs.length === 0) {
       this.showToast("Chưa có bài nộp nào để xuất báo cáo!", true);
       return;
     }
 
-    const headers = ["Thời Gian", "Mã Học Sinh", "Họ Và Tên", "Lớp", "Bài Tập", "Điểm Số", "Đạt Yêu Cầu"];
-    const rows = logs.map(l => [
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Bang_Diem_Python_${dateStr}`;
+
+    // Thử xuất bảng tính chuẩn Excel (.xlsx) với thư viện SheetJS
+    try {
+      const xlsxLib = (typeof XLSX !== 'undefined' && XLSX.utils) ? XLSX : (window.XLSX && window.XLSX.utils ? window.XLSX : null);
+      if (xlsxLib) {
+        const rows = logs.map((l, idx) => ({
+          "STT": idx + 1,
+          "Thời Gian Nộp": new Date(l.timestamp).toLocaleString('vi-VN'),
+          "Mã Học Sinh": l.studentId || '',
+          "Họ Và Tên": l.studentName || 'Học sinh',
+          "Lớp": l.className || 'Tự do',
+          "Mã Bài Tập": l.exerciseId || '',
+          "Điểm Số": l.score || 0,
+          "Kết Quả": l.passed ? "ĐẠT" : "CHƯA ĐẠT",
+          "Mã Nguồn Python": l.submittedCode || ''
+        }));
+
+        const ws = xlsxLib.utils.json_to_sheet(rows);
+        // Thiết lập độ rộng cột trực quan
+        ws['!cols'] = [
+          { wch: 6 },
+          { wch: 22 },
+          { wch: 15 },
+          { wch: 24 },
+          { wch: 12 },
+          { wch: 20 },
+          { wch: 10 },
+          { wch: 14 },
+          { wch: 60 }
+        ];
+
+        const wb = xlsxLib.utils.book_new();
+        xlsxLib.utils.book_append_sheet(wb, ws, "Bảng Điểm Python");
+        xlsxLib.writeFile(wb, `${fileName}.xlsx`);
+
+        this.showToast("✅ Đã xuất bảng điểm Excel (.xlsx) chuẩn thành công!");
+        return;
+      }
+    } catch (err) {
+      console.warn("Lỗi xuất Excel với SheetJS, chuyển sang fallback CSV:", err);
+    }
+
+    // Fallback: Xuất file CSV định dạng UTF-8 BOM
+    this.exportGradesCSV();
+  }
+
+  exportGradesCSV() {
+    const logs = adminStore.getSubmissionLogs();
+    if (!logs || logs.length === 0) {
+      this.showToast("Chưa có bài nộp nào để xuất báo cáo!", true);
+      return;
+    }
+
+    const headers = ["STT", "Thời Gian Nộp", "Mã Học Sinh", "Họ Và Tên", "Lớp", "Bài Tập", "Điểm Số", "Đạt Yêu Cầu"];
+    const rows = logs.map((l, idx) => [
+      idx + 1,
       `"${new Date(l.timestamp).toLocaleString('vi-VN')}"`,
       `"${l.studentId || ''}"`,
       `"${l.studentName || ''}"`,
@@ -609,7 +775,7 @@ class AdminController {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Bang_Diem_PySublime_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Bang_Diem_Python_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1583,7 +1749,7 @@ class AdminController {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pysublime_curriculum_${Date.now()}.json`;
+      a.download = `python_curriculum_${Date.now()}.json`;
       a.click();
       this.showToast("Đã tải về file JSON giáo trình!");
     });
@@ -1633,11 +1799,11 @@ class AdminController {
     });
 
     document.getElementById('btn-quick-export-grades')?.addEventListener('click', () => {
-      this.exportGradesCSV();
+      this.exportGrades();
     });
 
     // Học sinh & Bảng điểm
-    document.getElementById('btn-export-grades-csv')?.addEventListener('click', () => this.exportGradesCSV());
+    document.getElementById('btn-export-grades-csv')?.addEventListener('click', () => this.exportGrades());
     document.getElementById('input-search-students')?.addEventListener('input', () => this.loadStudentSubmissions());
     document.getElementById('filter-submission-status')?.addEventListener('change', () => this.loadStudentSubmissions());
 

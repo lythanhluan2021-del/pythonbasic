@@ -957,3 +957,126 @@ input:checked + .slider:before {
   object-fit: cover;
   background: #272822;
 }
+
+/* === BẢNG VÀNG THÀNH TÍCH (LEADERBOARD) === */
+.leaderboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.leaderboard-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leaderboard-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.leaderboard-card.rank-1 {
+  background: linear-gradient(135deg, rgba(230, 219, 116, 0.12), rgba(253, 151, 31, 0.05));
+  border-color: rgba(230, 219, 116, 0.5);
+  box-shadow: 0 4px 20px rgba(230, 219, 116, 0.15);
+}
+
+.leaderboard-card.rank-2 {
+  background: linear-gradient(135deg, rgba(200, 215, 230, 0.1), rgba(102, 217, 239, 0.04));
+  border-color: rgba(200, 215, 230, 0.45);
+}
+
+.leaderboard-card.rank-3 {
+  background: linear-gradient(135deg, rgba(253, 151, 31, 0.1), rgba(249, 38, 114, 0.04));
+  border-color: rgba(253, 151, 31, 0.45);
+}
+
+.leaderboard-rank-badge {
+  font-size: 26px;
+  min-width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.leaderboard-card.rank-1 .leaderboard-rank-badge {
+  background: rgba(230, 219, 116, 0.25);
+  border-color: var(--accent-yellow);
+}
+
+.leaderboard-card.rank-2 .leaderboard-rank-badge {
+  background: rgba(200, 215, 230, 0.2);
+  border-color: #c8d7e6;
+}
+
+.leaderboard-card.rank-3 .leaderboard-rank-badge {
+  background: rgba(253, 151, 31, 0.2);
+  border-color: var(--accent-orange);
+}
+
+.leaderboard-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.leaderboard-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.leaderboard-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.leaderboard-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.stat-pill {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-pill.passed {
+  background: rgba(166, 226, 46, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(166, 226, 46, 0.3);
+}
+
+.stat-pill.score {
+  background: rgba(253, 151, 31, 0.15);
+  color: var(--accent-orange);
+  border: 1px solid rgba(253, 151, 31, 0.3);
+}

@@ -22,6 +22,11 @@
   <meta name="description" content="Web App học lập trình Python cơ bản với IDE Monokai tối ưu cho điện thoại, tích hợp Google Drive CMS.">
   <title>Python - Học Lập Trình Python Trực Tuyến Trên Điện Thoại</title>
 
+  <!-- PWA & App Icons -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/python-logo.svg">
+  <link rel="apple-touch-icon" href="/python-logo.svg">
+
   <!-- Google Fonts: Fira Code & Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,6 +93,23 @@
     <!-- === VIEW 1: LÝ THUYẾT & LỘ TRÌNH HỌC PYTHON === -->
     <section class="view-panel" id="panel-theory">
       <div class="theory-wrapper">
+        <!-- Thanh tiến độ học tập VIP & XP Level -->
+        <div class="learning-progress-widget" id="learning-progress-widget">
+          <div class="progress-info-row">
+            <div class="progress-level-badge">
+              <span id="user-rank-icon">🌱</span>
+              <span id="user-rank-title">Tân Binh Python</span>
+            </div>
+            <div class="progress-stats">
+              <span class="stat-badge xp-badge">🏆 <strong id="user-total-xp">0</strong> XP</span>
+              <span class="stat-badge completed-badge">📚 <strong id="user-completed-count">0/11</strong> bài</span>
+            </div>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="learning-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <!-- Bộ chọn bài học -->
         <div class="lesson-selector-bar">
           <label for="lesson-dropdown-select" style="font-size: 13px; font-weight: 600; color: #a6e22e;">
@@ -127,6 +149,9 @@
             <!-- Các tab main.py, bai_tap.py render tự động -->
           </div>
           <div class="tab-actions">
+            <button class="btn-action-toolbar btn-reset-code" id="btn-reset-current-code" title="Đặt lại mã nguồn bài này về mẫu ban đầu">
+              <span>🔄</span> Đặt Lại
+            </button>
             <button class="btn-action-toolbar btn-run-code" id="btn-run-code" title="Chạy code (Phím tắt F5 hoặc nút Run)">
               <span>▶</span> Chạy Code
             </button>

@@ -1,0 +1,18 @@
+{
+  "name": "Python - Học Lập Trình Cơ Bản",
+  "short_name": "Python IDE",
+  "description": "Nền tảng học và thực hành lập trình Python trực tuyến tối ưu cho điện thoại và máy tính",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#141512",
+  "theme_color": "#191a18",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/python-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

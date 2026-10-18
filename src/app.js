@@ -154,6 +154,24 @@ class PySublimeApp {
       btnBackToIde.addEventListener('click', () => this.switchView('ide'));
     }
 
+    // === NÚT ĐẶT LẠI MÃ NGUỒN MẪU BAN ĐẦU ===
+    const btnResetCode = document.getElementById('btn-reset-current-code');
+    if (btnResetCode) {
+      btnResetCode.addEventListener('click', () => {
+        if (!this.currentLesson) return;
+        const activeTab = this.editor.getActiveTab();
+        const isPractice = activeTab && activeTab.id.includes('bai_tap');
+        const template = isPractice 
+          ? (this.currentLesson.practice?.initialCode || '')
+          : (this.currentLesson.sampleCode || '');
+
+        if (confirm("Bạn có muốn đặt lại mã nguồn bài này về mẫu ban đầu không?")) {
+          this.editor.setCode(template);
+          this.logTerminal(`\n🔄 [Hệ thống]: Đã đặt lại mã nguồn về mẫu ban đầu.\n`, 'info');
+        }
+      });
+    }
+
     // === NÚT ĐỒNG BỘ GOOGLE DRIVE ===
     const btnDriveModal = document.getElementById('btn-open-drive-modal');
     if (btnDriveModal) {
@@ -342,15 +360,17 @@ class PySublimeApp {
     const selector = document.getElementById('lesson-dropdown-select');
     if (!selector) return;
 
+    const completed = this.driveSync.getCompletedLessons();
     selector.innerHTML = '';
     this.currentModules.forEach(module => {
       const optGroup = document.createElement('optgroup');
       optGroup.label = module.title;
 
       module.lessons.forEach(lesson => {
+        const isDone = completed.includes(lesson.id);
         const option = document.createElement('option');
         option.value = lesson.id;
-        option.textContent = `${lesson.title} (${lesson.duration})`;
+        option.textContent = `${isDone ? '✅ ' : '📖 '}${lesson.title} (${lesson.duration})`;
         optGroup.appendChild(option);
       });
 
@@ -360,6 +380,68 @@ class PySublimeApp {
     selector.addEventListener('change', (e) => {
       this.selectLesson(e.target.value);
     });
+
+    this.updateLearningProgressUI();
+  }
+
+  /**
+   * Cập nhật thanh tiến độ học tập VIP & Gamification (XP, Rank Level)
+   */
+  updateLearningProgressUI() {
+    const fill = document.getElementById('learning-progress-fill');
+    const xpEl = document.getElementById('user-total-xp');
+    const countEl = document.getElementById('user-completed-count');
+    const rankTitle = document.getElementById('user-rank-title');
+    const rankIcon = document.getElementById('user-rank-icon');
+
+    if (!fill || !countEl) return;
+
+    let totalLessons = 0;
+    this.currentModules.forEach(m => totalLessons += (m.lessons || []).length);
+    if (totalLessons === 0) totalLessons = 1;
+
+    const completed = this.driveSync.getCompletedLessons();
+    const count = completed.length;
+    const pct = Math.min(100, Math.round((count / totalLessons) * 100));
+    const xp = count * 100;
+
+    fill.style.width = `${pct}%`;
+    countEl.textContent = `${count}/${totalLessons}`;
+    if (xpEl) xpEl.textContent = xp;
+
+    // Cấp bậc danh hiệu học sinh
+    if (rankTitle && rankIcon) {
+      if (count >= 10) {
+        rankIcon.textContent = '👑';
+        rankTitle.textContent = 'Cao Thủ Python';
+      } else if (count >= 6) {
+        rankIcon.textContent = '🏹';
+        rankTitle.textContent = 'Chiến Binh Python';
+      } else if (count >= 3) {
+        rankIcon.textContent = '⚡';
+        rankTitle.textContent = 'Tập Sự Python';
+      } else {
+        rankIcon.textContent = '🌱';
+        rankTitle.textContent = 'Tân Binh Python';
+      }
+    }
+  }
+
+  /**
+   * Lấy bài học kế tiếp trong lộ trình
+   */
+  getNextLesson() {
+    if (!this.currentLesson) return null;
+    let foundCurrent = false;
+    for (const mod of this.currentModules) {
+      for (const lesson of mod.lessons) {
+        if (foundCurrent) return lesson;
+        if (lesson.id === this.currentLesson.id) {
+          foundCurrent = true;
+        }
+      }
+    }
+    return null;
   }
 
   selectLesson(lessonId) {
@@ -541,9 +623,26 @@ class PySublimeApp {
 
     if (testResults.allPassed) {
       await this.driveSync.markLessonCompleted(this.currentLesson.id);
-      this.logTerminal(`\n🎉 CHÚC MỪNG! Bạn đã hoàn thành xuất sắc thử thách này!\n`, 'output');
+      this.updateLearningProgressUI();
+      this.setupCurriculum();
+
+      this.logTerminal(`\n🎉 CHÚC MỪNG! Bạn đã hoàn thành xuất sắc thử thách này và nhận +100 XP!\n`, 'output');
       if (syncRes.syncedToDrive) {
         this.logTerminal(`📊 [Google Sheet]: Điểm ${testResults.score} đã được ghi tự động vào bảng điểm của giáo viên!\n`, 'info');
+      }
+
+      const nextLesson = this.getNextLesson();
+      if (nextLesson && resultsPanel) {
+        const nextBtnHtml = `
+          <button class="btn-next-lesson" id="btn-next-lesson-action">
+            <span>👉</span> Học Bài Tiếp Theo: ${this.escapeHtml(nextLesson.title)} ➔
+          </button>
+        `;
+        resultsPanel.insertAdjacentHTML('beforeend', nextBtnHtml);
+        document.getElementById('btn-next-lesson-action')?.addEventListener('click', () => {
+          this.selectLesson(nextLesson.id);
+          this.switchView('theory');
+        });
       }
     } else {
       if (this.settings.showHints !== false) {

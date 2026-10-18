@@ -175,12 +175,23 @@ class PySublimeApp {
       }
     });
 
-    // === NÚT TĂNG/GIẢM CỠ CHỮ TOÀN DIỆN DI ĐỘNG (A- / A+) ===
+    // === NÚT TĂNG/GIẢM CỠ CHỮ TOÀN DIỆN (A- / A+) TRÊN HEADER ===
     document.getElementById('btn-mobile-font-inc')?.addEventListener('click', () => {
       this.increaseUniversalFontSize();
     });
     document.getElementById('btn-mobile-font-dec')?.addEventListener('click', () => {
       this.decreaseUniversalFontSize();
+    });
+
+    // === NÚT PHÓNG TO / THU NHỎ TRÊN THANH CÔNG CỤ BÀI HỌC (READING ZOOM TOOLBAR) ===
+    document.getElementById('btn-zoom-in')?.addEventListener('click', () => {
+      this.increaseUniversalFontSize();
+    });
+    document.getElementById('btn-zoom-out')?.addEventListener('click', () => {
+      this.decreaseUniversalFontSize();
+    });
+    document.getElementById('btn-zoom-reset')?.addEventListener('click', () => {
+      this.resetUniversalFontSize();
     });
 
     // === NÚT ĐIỀU HƯỚNG BÀI HỌC (TRƯỚC / KẾ TIẾP) ===
@@ -189,8 +200,8 @@ class PySublimeApp {
     document.getElementById('btn-prev-lesson-btm')?.addEventListener('click', () => this.goToPrevLesson());
     document.getElementById('btn-next-lesson-btm')?.addEventListener('click', () => this.goToNextLesson());
 
-    // Kích hoạt cử chỉ vuốt ngón tay chuyển bài (Touch Swipe Gestures)
-    this.setupSwipeNavigation();
+    // Kích hoạt cử chỉ chụm 2 ngón tay phóng to/thu nhỏ bài học (Pinch-To-Zoom)
+    this.setupPinchToZoom();
 
     // === CHUYỂN ĐỔI TAB VIEW TRÊN ĐIỆN THOẠI (FALLBACK) ===
     const navButtons = document.querySelectorAll('.nav-tab-btn');
@@ -658,64 +669,122 @@ class PySublimeApp {
     }
   }
 
-  setupSwipeNavigation() {
+  setupPinchToZoom() {
     const theoryPanel = document.getElementById('panel-theory');
     if (!theoryPanel) return;
 
-    let touchStartX = 0;
-    let touchStartY = 0;
+    let initialDist = 0;
+    let initialFontSize = 17;
 
     theoryPanel.addEventListener('touchstart', (e) => {
-      touchStartX = e.changedTouches[0].screenX;
-      touchStartY = e.changedTouches[0].screenY;
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialDist = Math.hypot(dx, dy);
+        initialFontSize = this.currentFontSize || 17;
+      }
+    }, { passive: true });
+
+    theoryPanel.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && initialDist > 0) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDist = Math.hypot(dx, dy);
+        const scale = currentDist / initialDist;
+        const delta = Math.round((scale - 1) * 8);
+        if (Math.abs(delta) >= 1) {
+          const newSize = Math.max(13, Math.min(28, initialFontSize + delta));
+          if (newSize !== this.currentFontSize) {
+            this.applyUniversalFontSize(newSize);
+          }
+        }
+      }
     }, { passive: true });
 
     theoryPanel.addEventListener('touchend', (e) => {
-      if (e.target.closest('.theory-code-block, select, button, input')) return;
-
-      const touchEndX = e.changedTouches[0].screenX;
-      const touchEndY = e.changedTouches[0].screenY;
-      const diffX = touchEndX - touchStartX;
-      const diffY = touchEndY - touchStartY;
-
-      // Vuốt ngang rõ rệt (diffX > 60px và ngang gấp 1.5 lần dọc)
-      if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-        if (diffX < 0) {
-          // Vuốt sang trái -> Sang bài kế tiếp
-          this.goToNextLesson();
-        } else {
-          // Vuốt sang phải -> Về bài trước
-          this.goToPrevLesson();
-        }
+      if (e.touches.length < 2) {
+        initialDist = 0;
       }
     }, { passive: true });
   }
 
   applyUniversalFontSize(size) {
-    this.currentFontSize = Math.max(13, Math.min(26, size));
+    this.currentFontSize = Math.max(13, Math.min(28, size));
+    
+    // 1. Cập nhật CSS variables trên :root
     document.documentElement.style.setProperty('--theory-body-size', `${this.currentFontSize}px`);
 
-    const markdownBody = document.getElementById('lesson-markdown-body');
-    if (markdownBody) markdownBody.style.fontSize = `${this.currentFontSize}px`;
+    // 2. Cập nhật nhãn hiển thị cỡ chữ trên thanh công cụ đọc bài
+    const zoomLabel = document.getElementById('read-zoom-label');
+    if (zoomLabel) {
+      zoomLabel.textContent = `Cỡ chữ: ${this.currentFontSize}px`;
+    }
 
-    const practiceContainer = document.getElementById('lesson-practice-container');
-    if (practiceContainer) practiceContainer.style.fontSize = `${this.currentFontSize}px`;
+    // 3. Inject / Cập nhật thẻ dynamic style trong <head> để đè mọi độ ưu tiên CSS
+    let styleTag = document.getElementById('pysublime-dynamic-font-override');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'pysublime-dynamic-font-override';
+      document.head.appendChild(styleTag);
+    }
+    const s = this.currentFontSize;
+    styleTag.textContent = `
+      :root {
+        --theory-body-size: ${s}px !important;
+      }
+      .lesson-content-card,
+      .lesson-content-card p,
+      .lesson-content-card li,
+      .lesson-content-card span:not(.code-lang-tag):not(.code-scroll-hint),
+      .lesson-content-card td,
+      .lesson-content-card th,
+      .lesson-content-card blockquote {
+        font-size: ${s}px !important;
+        line-height: 1.7 !important;
+      }
+      .lesson-content-card h1 {
+        font-size: ${Math.round(s * 1.35)}px !important;
+        line-height: 1.35 !important;
+      }
+      .lesson-content-card h2 {
+        font-size: ${Math.round(s * 1.22)}px !important;
+        line-height: 1.35 !important;
+      }
+      .lesson-content-card h3 {
+        font-size: ${Math.round(s * 1.12)}px !important;
+        line-height: 1.35 !important;
+      }
+      .theory-code-block,
+      .theory-code-block code,
+      .code-snippet-pre,
+      .code-snippet-pre code {
+        font-size: ${Math.max(12, s - 1)}px !important;
+      }
+      .practice-card,
+      .practice-card p,
+      .practice-card li {
+        font-size: ${s}px !important;
+      }
+    `;
 
+    // 4. Đồng bộ cỡ chữ với Ace Editor
     if (this.editor && typeof this.editor.setFontSize === 'function') {
       this.editor.setFontSize(this.currentFontSize);
     }
 
+    // 5. Đồng bộ cỡ chữ với Terminal & Console
     const termScreen = document.getElementById('terminal-screen');
     if (termScreen) termScreen.style.fontSize = `${this.currentFontSize}px`;
     const drawerScreen = document.getElementById('drawer-terminal-screen');
     if (drawerScreen) drawerScreen.style.fontSize = `${this.currentFontSize}px`;
 
+    // 6. Lưu vào bộ nhớ trình duyệt
     localStorage.setItem('pysublime_universal_font_size', this.currentFontSize);
   }
 
   increaseUniversalFontSize() {
     const current = this.currentFontSize || 17;
-    const next = Math.min(26, current + 2);
+    const next = Math.min(28, current + 2);
     this.applyUniversalFontSize(next);
     this.showToast(`🔍 Cỡ chữ: ${next}px (Đã phóng to bài học & code)`);
   }
@@ -725,6 +794,12 @@ class PySublimeApp {
     const next = Math.max(13, current - 2);
     this.applyUniversalFontSize(next);
     this.showToast(`🔍 Cỡ chữ: ${next}px (Đã thu nhỏ bài học & code)`);
+  }
+
+  resetUniversalFontSize() {
+    const defaultSize = window.innerWidth < 992 ? 17 : 15;
+    this.applyUniversalFontSize(defaultSize);
+    this.showToast(`↺ Đã đặt lại cỡ chữ chuẩn (${defaultSize}px)`);
   }
 
   renderMarkdownToHtml(markdown) {
@@ -832,6 +907,11 @@ class PySublimeApp {
 
     // Tự động cuộn lên đầu trang lý thuyết
     document.getElementById('panel-theory')?.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Đồng bộ cỡ chữ hiện tại cho bài học mới
+    if (this.currentFontSize) {
+      this.applyUniversalFontSize(this.currentFontSize);
+    }
   }
 
   renderLessonTheory(lesson) {

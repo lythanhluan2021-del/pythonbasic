@@ -413,14 +413,19 @@ body {
 /* === VIEW 1: LÝ THUYẾT & LỘ TRÌNH === */
 #panel-theory {
   background-color: #1e1f1c;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
   padding: 16px;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y pinch-zoom !important;
+  overscroll-behavior-x: contain !important;
 }
 
 .theory-wrapper {
   max-width: 800px;
+  width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* === THANH TIẾN ĐỘ HỌC TẬP VIP & GAMIFICATION === */
@@ -558,6 +563,80 @@ body {
   max-width: 65%;
 }
 
+/* === VIP READING ZOOM TOOLBAR === */
+.reading-zoom-toolbar {
+  background: linear-gradient(135deg, rgba(26, 27, 23, 0.95), rgba(20, 21, 18, 0.98));
+  border: 1px solid var(--sublime-border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zoom-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.btn-read-zoom {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-fg);
+  font-family: var(--font-code);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-read-zoom:active {
+  background: var(--monokai-orange);
+  color: #141512;
+  transform: scale(0.94);
+}
+
+.read-zoom-level-pill {
+  flex: 1;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.read-zoom-level {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--monokai-yellow);
+  font-family: var(--font-code);
+  letter-spacing: 0.2px;
+}
+
+.btn-read-zoom.btn-zoom-reset {
+  color: var(--monokai-cyan);
+  border-color: rgba(102, 217, 239, 0.3);
+}
+
+.zoom-toolbar-hint {
+  font-size: 11px;
+  color: var(--monokai-gray);
+  text-align: center;
+  user-select: none;
+}
+
 .lesson-content-card {
   background: var(--sublime-bg);
   border: 1px solid var(--sublime-border);
@@ -565,44 +644,64 @@ body {
   padding: 18px;
   margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: var(--theory-body-size, 16px);
+  line-height: 1.7;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .lesson-content-card h1 {
-  font-size: 20px;
+  font-size: calc(var(--theory-body-size, 16px) * 1.35);
   color: var(--monokai-orange);
   margin-bottom: 12px;
   border-bottom: 1px solid var(--sublime-border);
   padding-bottom: 8px;
+  line-height: 1.35;
+}
+
+.lesson-content-card h2 {
+  font-size: calc(var(--theory-body-size, 16px) * 1.22);
+  color: var(--monokai-orange);
+  margin: 16px 0 8px;
+  line-height: 1.35;
 }
 
 .lesson-content-card h3 {
-  font-size: 15px;
+  font-size: calc(var(--theory-body-size, 16px) * 1.12);
   color: var(--monokai-cyan);
   margin: 14px 0 8px 0;
+  line-height: 1.35;
 }
 
 .lesson-content-card p {
-  font-size: 14px;
+  font-size: var(--theory-body-size, 16px);
   color: #d6d6d0;
   margin-bottom: 10px;
+  line-height: 1.7;
 }
 
 .lesson-content-card ul, .lesson-content-card ol {
   padding-left: 20px;
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: var(--theory-body-size, 16px);
   color: #d6d6d0;
+  line-height: 1.7;
 }
 
 .lesson-content-card li {
   margin-bottom: 6px;
+  font-size: var(--theory-body-size, 16px);
+  line-height: 1.7;
 }
 
 .lesson-content-card table {
   width: 100%;
   border-collapse: collapse;
   margin: 14px 0;
-  font-size: 13px;
+  font-size: var(--theory-body-size, 15px);
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .lesson-content-card th, .lesson-content-card td {
@@ -1631,7 +1730,16 @@ body.simplified-header #btn-open-drive-modal {
   #panel-theory {
     padding: 12px 10px 24px;
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  .theory-wrapper {
+    width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .learning-progress-widget {
@@ -1695,22 +1803,24 @@ body.simplified-header #btn-open-drive-modal {
   .lesson-content-card {
     padding: 16px 14px;
     border-radius: 12px;
-    font-size: var(--theory-body-size, 16px);
-    line-height: 1.65;
+    font-size: var(--theory-body-size, 16px) !important;
+    line-height: 1.7 !important;
     background: var(--sublime-bg);
     border: 1px solid var(--sublime-border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .lesson-content-card p,
   .lesson-content-card li {
-    font-size: var(--theory-body-size, 16px);
-    line-height: 1.65;
+    font-size: var(--theory-body-size, 16px) !important;
+    line-height: 1.7 !important;
     color: #d6d6d0;
   }
 
   .lesson-content-card h1 { 
-    font-size: calc(var(--theory-body-size, 16px) * 1.35); 
+    font-size: calc(var(--theory-body-size, 16px) * 1.35) !important; 
     line-height: 1.35; 
     margin-bottom: 12px; 
     color: var(--monokai-orange);
@@ -1718,13 +1828,13 @@ body.simplified-header #btn-open-drive-modal {
     padding-bottom: 8px;
   }
   .lesson-content-card h2 { 
-    font-size: calc(var(--theory-body-size, 16px) * 1.2); 
+    font-size: calc(var(--theory-body-size, 16px) * 1.22) !important; 
     line-height: 1.35; 
     margin: 18px 0 8px; 
     color: var(--monokai-orange); 
   }
   .lesson-content-card h3 { 
-    font-size: calc(var(--theory-body-size, 16px) * 1.1); 
+    font-size: calc(var(--theory-body-size, 16px) * 1.12) !important; 
     margin: 14px 0 6px; 
     color: var(--monokai-cyan); 
   }

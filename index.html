@@ -151,13 +151,34 @@
 
         <!-- Bộ chọn bài học & Nút chuyển bài nhanh -->
         <div class="lesson-selector-bar">
-          <button class="btn-lesson-nav-icon" id="btn-prev-lesson-top" title="Bài học trước (hoặc vuốt phải)">◀</button>
+          <button class="btn-lesson-nav-icon" id="btn-prev-lesson-top" title="Bài học trước">◀</button>
           <div class="lesson-select-wrapper">
             <select id="lesson-dropdown-select" class="lesson-select-dropdown" aria-label="Chọn bài học Python">
               <!-- Tự động điền bởi app.js -->
             </select>
           </div>
-          <button class="btn-lesson-nav-icon" id="btn-next-lesson-top" title="Bài học tiếp theo (hoặc vuốt trái)">▶</button>
+          <button class="btn-lesson-nav-icon" id="btn-next-lesson-top" title="Bài học tiếp theo">▶</button>
+        </div>
+
+        <!-- Thanh công cụ phóng to / thu nhỏ cỡ chữ đọc bài (Reading Zoom Toolbar VIP) -->
+        <div class="reading-zoom-toolbar" id="reading-zoom-toolbar">
+          <div class="zoom-toolbar-actions">
+            <button class="btn-read-zoom" id="btn-zoom-out" type="button" title="Thu nhỏ chữ bài học (A-)">
+              <span>🔍 A-</span>
+            </button>
+            <div class="read-zoom-level-pill">
+              <span class="read-zoom-level" id="read-zoom-label">Cỡ chữ: 17px</span>
+            </div>
+            <button class="btn-read-zoom" id="btn-zoom-in" type="button" title="Phóng to chữ bài học (A+)">
+              <span>🔍 A+</span>
+            </button>
+            <button class="btn-read-zoom btn-zoom-reset" id="btn-zoom-reset" type="button" title="Đặt lại cỡ chữ chuẩn ban đầu">
+              <span>↺ 100%</span>
+            </button>
+          </div>
+          <div class="zoom-toolbar-hint">
+            <span>📐 Chụm 2 ngón tay hoặc bấm A+/A- để chỉnh cỡ chữ &bull; Cuộn ngang để xem hết code</span>
+          </div>
         </div>
 
         <!-- Nội dung bài học (Markdown) -->
@@ -190,9 +211,9 @@
           </button>
         </div>
 
-        <!-- Gợi ý cử chỉ vuốt ngón tay -->
+        <!-- Gợi ý thao tác đọc & cuộn màn hình -->
         <div class="swipe-hint-bar">
-          <span>👈 <strong>Vuốt trái</strong>: Bài tiếp theo &bull; <strong>Vuốt phải</strong>: Bài trước 👉</span>
+          <span>💡 <strong>Mẹo:</strong> Kéo sang trái/phải để xem trọn các đoạn code dài &bull; Dùng nút Bài Trước / Bài Tiếp để chuyển bài</span>
         </div>
       </div>
     </section>

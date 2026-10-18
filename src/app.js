@@ -148,6 +148,12 @@ class PySublimeApp {
       submitDirectBtn.addEventListener('click', () => this.gradeCurrentPractice());
     }
 
+    // === NÚT QUAY LẠI TRÌNH SOẠN THẢO TỪ TERMINAL TRÊN MOBILE ===
+    const btnBackToIde = document.getElementById('btn-back-to-ide');
+    if (btnBackToIde) {
+      btnBackToIde.addEventListener('click', () => this.switchView('ide'));
+    }
+
     // === NÚT ĐỒNG BỘ GOOGLE DRIVE ===
     const btnDriveModal = document.getElementById('btn-open-drive-modal');
     if (btnDriveModal) {
@@ -304,6 +310,15 @@ class PySublimeApp {
         this.editor.redo();
       } else if (action === 'clear') {
         this.editor.clear();
+      } else if (btn.dataset.snippet) {
+        const snippet = btn.dataset.snippet;
+        if (snippet === 'print()') {
+          this.editor.insertText('print()', -1);
+        } else if (snippet === 'input()') {
+          this.editor.insertText('input()', -1);
+        } else {
+          this.editor.insertText(snippet);
+        }
       } else if (char) {
         // Chèn ký tự thông minh (cặp ngoặc đặt con trỏ ở giữa)
         if (char === '()') {
@@ -710,6 +725,13 @@ class PySublimeApp {
     const authBtn = document.getElementById('btn-auth-action');
     const currentUser = adminStore.getCurrentUser();
 
+    // Kiểm soát hiển thị nút Quản Trị: Chỉ hiển thị cho Admin
+    const adminHeaderLink = document.getElementById('btn-admin-header-link');
+    if (adminHeaderLink) {
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.type === 'admin');
+      adminHeaderLink.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+
     if (currentUser) {
       this.driveSync.student = {
         studentId: currentUser.username || currentUser.email,
@@ -719,29 +741,29 @@ class PySublimeApp {
 
       if (badge) {
         if (currentUser.role === 'admin' || currentUser.type === 'admin') {
-          badge.innerHTML = `🛡️ <strong>Quản Trị Viên</strong> <span style="font-size:11px; opacity:0.8;">(Admin)</span>`;
+          badge.innerHTML = `🛡️ <strong>Admin</strong>`;
           badge.title = 'Tài khoản Quản trị viên - Bấm để vào trang Quản trị Admin';
         } else if (currentUser.type === 'school') {
-          badge.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong> <span style="font-size:11px; opacity:0.8;">(${this.escapeHtml(currentUser.className || currentUser.username)})</span>`;
-          badge.title = `Học sinh trường: ${currentUser.fullName} (${currentUser.username}) - Bấm để xem thông tin`;
+          badge.innerHTML = `🎓 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
+          badge.title = `Học sinh: ${currentUser.fullName} (${currentUser.username}) - Bấm để xem thông tin`;
         } else {
-          badge.innerHTML = `🌐 <strong>${this.escapeHtml(currentUser.fullName)}</strong> <span style="font-size:11px; opacity:0.8;">(Google)</span>`;
+          badge.innerHTML = `🌐 <strong>${this.escapeHtml(currentUser.fullName)}</strong>`;
           badge.title = `Tài khoản Google: ${currentUser.email}`;
         }
       }
 
       if (authBtn) {
-        authBtn.innerHTML = '🚪 Đăng Xuất';
+        authBtn.innerHTML = '🚪';
         authBtn.classList.add('logged-in');
         authBtn.title = `Đang đăng nhập: ${currentUser.fullName}. Bấm để đăng xuất`;
       }
     } else {
       if (badge) {
-        badge.innerHTML = `👤 Khách (Tự do)`;
+        badge.innerHTML = `👤 Khách`;
         badge.title = 'Bạn đang học ở chế độ Khách. Bấm để đăng nhập';
       }
       if (authBtn) {
-        authBtn.innerHTML = '🔑 Đăng Nhập';
+        authBtn.innerHTML = '🔑';
         authBtn.classList.remove('logged-in');
         authBtn.title = 'Đăng nhập với tài khoản trường hoặc tài khoản Google';
       }

@@ -43,38 +43,41 @@
       <div class="brand-logo">S</div>
       <div class="brand-title">
         PySublime
-        <span class="brand-badge">Mobile IDE</span>
+        <span class="brand-badge desktop-only">Mobile IDE</span>
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn-header" id="btn-toggle-theory" title="Ẩn/Hiện lý thuyết để mở rộng không gian soạn thảo">
+      <button class="btn-header desktop-only" id="btn-toggle-theory" title="Ẩn/Hiện lý thuyết">
         📖 <span id="theory-toggle-text">Ẩn Lý Thuyết</span>
       </button>
-      <button class="btn-header" id="student-badge-btn" title="Hồ sơ người dùng">
-        👤 Đang tải...
-      </button>
-      <button class="btn-header btn-auth-action" id="btn-auth-action" title="Đăng nhập / Đăng xuất">
-        🔑 Đăng Nhập
-      </button>
-      <button class="btn-header btn-drive" id="btn-open-drive-modal" title="Cấu hình Google Drive">
+      <button class="btn-header desktop-only btn-drive" id="btn-open-drive-modal" title="Cấu hình Google Drive">
         📁 Google Drive
       </button>
-      <a href="/admin.html" class="btn-header btn-admin-link" title="Mở trang Quản trị Admin">
+      <button class="btn-header btn-user-pill" id="student-badge-btn" title="Hồ sơ tài khoản">
+        👤 Đang tải...
+      </button>
+      <a href="/admin.html" class="btn-header btn-admin-link" id="btn-admin-header-link" title="Mở trang Quản trị Admin" style="display: none;">
         ⚙️ Quản Trị
       </a>
+      <button class="btn-header btn-auth-action" id="btn-auth-action" title="Đăng nhập / Đăng xuất">
+        🚪
+      </button>
     </div>
   </header>
 
-  <!-- === THANH CHUYỂN TAB TRÊN ĐIỆN THOẠI (MOBILE VIEW SWITCHER) === -->
+  <!-- === THANH CHUYỂN TAB TRÊN ĐIỆN THOẠI (SEGMENTED CONTROL) === -->
   <nav class="mobile-view-nav" aria-label="Điều hướng xem trên di động">
     <button class="nav-tab-btn" data-view="theory" id="nav-btn-theory">
-      <span>📖</span> Lý Thuyết
+      <span class="nav-tab-icon">📖</span>
+      <span class="nav-tab-label">1. Bài Học</span>
     </button>
     <button class="nav-tab-btn active" data-view="ide" id="nav-btn-ide">
-      <span>💻</span> Sublime IDE
+      <span class="nav-tab-icon">💻</span>
+      <span class="nav-tab-label">2. Soạn Code</span>
     </button>
     <button class="nav-tab-btn" data-view="terminal" id="nav-btn-terminal">
-      <span>📟</span> Terminal
+      <span class="nav-tab-icon">📟</span>
+      <span class="nav-tab-label">3. Kết Quả</span>
       <span class="badge-count" id="terminal-badge">Python</span>
     </button>
   </nav>
@@ -130,7 +133,7 @@
             <button class="btn-action-toolbar btn-submit-code" id="btn-submit-practice-direct" title="Chấm điểm bài tập thực hành">
               <span>📝</span> Chấm Điểm
             </button>
-            <button class="btn-action-toolbar btn-toggle-term-btn" id="btn-toggle-terminal-view" title="Ẩn/Mở Terminal">
+            <button class="btn-action-toolbar btn-toggle-term-btn desktop-only" id="btn-toggle-terminal-view" title="Ẩn/Mở Terminal">
               <span>📟</span> Console
             </button>
           </div>
@@ -143,6 +146,16 @@
 
         <!-- BÀN PHÍM ẢO TRỢ LỰC GÕ CODE CHO ĐIỆN THOẠI DI ĐỘNG -->
         <div class="mobile-virtual-keyboard" id="mobile-virtual-keyboard">
+          <!-- Nhóm cú pháp nhanh Python cho di động -->
+          <div class="vk-group">
+            <button class="vk-btn highlight action" data-snippet="print()" title="Hàm in print()">print()</button>
+            <button class="vk-btn highlight action" data-snippet="input()" title="Hàm nhập input()">input()</button>
+            <button class="vk-btn action" data-snippet="if " title="Câu lệnh if">if</button>
+            <button class="vk-btn action" data-snippet="for " title="Vòng lặp for">for</button>
+            <button class="vk-btn action" data-snippet="def " title="Định nghĩa hàm def">def</button>
+            <button class="vk-btn" data-char="#" title="Dấu chú thích #">#</button>
+          </div>
+
           <!-- Nhóm thụt dòng (Indentation) -->
           <div class="vk-group">
             <button class="vk-btn highlight action" data-action="tab" title="Phím Tab (4 space)">Tab</button>
@@ -152,7 +165,7 @@
 
           <!-- Nhóm ký tự đặc biệt hay dùng trong Python -->
           <div class="vk-group">
-            <button class="vk-btn highlight" data-char=":" title="Dấu hai chấm (cực kỳ quan trọng sau if/for/def)">:</button>
+            <button class="vk-btn highlight" data-char=":" title="Dấu hai chấm (sau if/for/def)">:</button>
             <button class="vk-btn" data-char="()" title="Cặp ngoặc tròn ( )">( )</button>
             <button class="vk-btn" data-char="[]" title="Cặp ngoặc vuông [ ]">[ ]</button>
             <button class="vk-btn" data-char="{}" title="Cặp ngoặc nhọn { }">{ }</button>
@@ -190,16 +203,16 @@
       <section class="view-panel" id="panel-terminal">
         <div class="terminal-header">
           <div class="terminal-title">
-            <span>📟</span> Python 3.12 WebAssembly Console
+            <span>📟</span> Python 3.12 Console
           </div>
           <div class="terminal-controls">
-            <button class="btn-term-action" id="btn-submit-practice" style="color: #a6e22e; border-color: #a6e22e;">
-              📝 Chấm Điểm Thử Thách
+            <button class="btn-term-action btn-back-to-ide" id="btn-back-to-ide" title="Quay lại soạn code">
+              <span>⬅</span> Soạn Code
             </button>
-            <button class="btn-term-action" id="btn-clear-terminal">
-              🧹 Xóa Màn Hình
+            <button class="btn-term-action" id="btn-clear-terminal" title="Xóa màn hình console">
+              🧹 Xóa
             </button>
-            <button class="btn-term-action" id="btn-dock-term-toggle" title="Thu gọn/Mở rộng Console">
+            <button class="btn-term-action desktop-only" id="btn-dock-term-toggle" title="Thu gọn/Mở rộng Console">
               ▼
             </button>
           </div>

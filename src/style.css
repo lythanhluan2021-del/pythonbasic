@@ -504,6 +504,24 @@ body {
   box-shadow: 0 0 10px rgba(166, 226, 46, 0.5);
 }
 
+/* Nút chuyển đổi 1 dòng / ngắt dòng */
+.btn-toggle-wrap {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--sublime-border);
+  color: var(--monokai-cyan);
+}
+
+.btn-toggle-wrap:hover {
+  background: rgba(102, 217, 239, 0.15);
+  color: #fff;
+}
+
+.btn-toggle-wrap.active {
+  background: rgba(102, 217, 239, 0.22);
+  border-color: var(--monokai-cyan);
+  color: #fff;
+}
+
 /* Nút đặt lại code */
 .btn-reset-code {
   background: rgba(255, 255, 255, 0.06);
@@ -2017,29 +2035,34 @@ body.simplified-header #btn-open-drive-modal {
      TAB 2: TRÌNH SOẠN THẢO SUBLIME TEXT IDE TRÊN MOBILE
      ======================================================== */
   .sublime-tabs-bar {
-    height: 46px;
-    padding: 0 8px;
+    height: 44px;
+    padding: 0 6px;
     background: #171815;
     border-bottom: 1px solid var(--sublime-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 4px;
     flex-shrink: 0;
   }
 
   .mobile-file-badge {
     display: inline-flex !important;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--sublime-border);
-    padding: 5px 10px;
+    padding: 4px 7px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--monokai-green);
     font-family: var(--font-code);
+    max-width: 85px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .sublime-tabs-container {
@@ -2049,21 +2072,21 @@ body.simplified-header #btn-open-drive-modal {
   .tab-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
     flex-shrink: 0;
   }
 
-  /* NÚT THAO TÁC CHÍNH TRÊN MOBILE: RỘNG RÃI & RÕ RÀNG */
+  /* NÚT THAO TÁC TRÊN MOBILE: GỌN GÀNG, VỪA KHÍT MỌI ĐIỆN THOẠI KHÔNG BỊ TRÀN VIỀN */
   .btn-action-toolbar {
-    height: 38px;
-    padding: 0 12px;
-    font-size: 13px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: 12.5px;
     font-weight: 800;
-    border-radius: 8px;
+    border-radius: 7px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
     border: none;
@@ -2077,7 +2100,7 @@ body.simplified-header #btn-open-drive-modal {
   .btn-run-code {
     background: var(--monokai-green) !important;
     color: #141512 !important;
-    box-shadow: 0 3px 12px rgba(166, 226, 46, 0.45) !important;
+    box-shadow: 0 2px 10px rgba(166, 226, 46, 0.4) !important;
   }
 
   .btn-submit-code {
@@ -2086,18 +2109,43 @@ body.simplified-header #btn-open-drive-modal {
     color: var(--monokai-orange) !important;
   }
 
+  .btn-toggle-wrap,
   .btn-reset-code {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--sublime-border);
     color: var(--monokai-fg);
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 7px;
+    font-size: 14px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .btn-toggle-wrap {
+    color: var(--monokai-cyan);
+  }
+
+  .btn-toggle-wrap.active {
+    background: rgba(102, 217, 239, 0.22);
+    border-color: var(--monokai-cyan);
+    color: #fff;
+  }
+
+  /* Tối ưu cuộn ngang mượt mà cho Ace Editor khi giữ 1 dòng code */
+  #ace-editor-instance .ace_scroller {
+    -webkit-overflow-scrolling: touch !important;
+  }
+  #ace-editor-instance .ace_scrollbar-h {
+    height: 5px !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+  #ace-editor-instance .ace_scrollbar-h .ace_scrollbar-inner {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 3px !important;
   }
 
   /* KHUNG ACE EDITOR: CỠ CHỮ TO 16PX, TỰ ĐỘNG LẤP ĐẦY TOÀN BỘ KHÔNG GIAN CÒN LẠI */

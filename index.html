@@ -232,16 +232,20 @@
             <!-- Các tab main.py, bai_tap.py render tự động trên desktop -->
           </div>
           <div class="tab-actions">
-            <button class="btn-action-toolbar btn-reset-code" id="btn-reset-current-code" title="Đặt lại mã nguồn bài này về mẫu ban đầu">
+            <!-- Nút chuyển đổi giữ 1 dòng (chuẩn Python) / Tự ngắt dòng -->
+            <button class="btn-action-toolbar btn-toggle-wrap" id="btn-toggle-wrap" type="button" title="Chuyển đổi: 1 Dòng (Cuộn ngang) / Xuống dòng">
+              <span id="wrap-icon">↔</span> <span class="btn-text desktop-only" id="wrap-text">1 Dòng</span>
+            </button>
+            <button class="btn-action-toolbar btn-reset-code" id="btn-reset-current-code" type="button" title="Đặt lại mã nguồn bài này về mẫu ban đầu">
               <span>🔄</span> <span class="btn-text desktop-only">Đặt Lại</span>
             </button>
-            <button class="btn-action-toolbar btn-run-code" id="btn-run-code" title="Chạy code (Phím tắt F5 hoặc nút Run)">
-              <span>▶</span> <span class="btn-text">Chạy Code</span>
+            <button class="btn-action-toolbar btn-run-code" id="btn-run-code" type="button" title="Chạy code (Phím tắt F5 hoặc nút Run)">
+              <span>▶</span> <span class="btn-text">Chạy</span>
             </button>
-            <button class="btn-action-toolbar btn-submit-code" id="btn-submit-practice-direct" title="Chấm điểm bài tập thực hành">
-              <span>📝</span> <span class="btn-text">Chấm Điểm</span>
+            <button class="btn-action-toolbar btn-submit-code" id="btn-submit-practice-direct" type="button" title="Chấm điểm bài tập thực hành">
+              <span>📝</span> <span class="btn-text">Chấm</span>
             </button>
-            <button class="btn-action-toolbar btn-toggle-term-btn desktop-only" id="btn-toggle-terminal-view" title="Ẩn/Mở Terminal">
+            <button class="btn-action-toolbar btn-toggle-term-btn desktop-only" id="btn-toggle-terminal-view" type="button" title="Ẩn/Mở Terminal">
               <span>📟</span> Console
             </button>
           </div>

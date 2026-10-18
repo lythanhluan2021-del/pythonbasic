@@ -215,6 +215,12 @@ class PySublimeApp {
     // === BÀN PHÍM ẢO TRỢ LỰC CODE CHO ĐIỆN THOẠI ===
     this.bindVirtualKeyboardEvents();
 
+    // === NÚT CHUYỂN ĐỔI CHẾ ĐỘ 1 DÒNG (CUỘN NGANG) / NGẮT DÒNG MỀM ===
+    document.getElementById('btn-toggle-wrap')?.addEventListener('click', () => {
+      const isWrap = this.editor.toggleWrapMode();
+      this.showToast(isWrap ? '↩ Đang bật ngắt dòng mềm' : '↔ Đang giữ 1 dòng (Cuộn ngang chuẩn Python)');
+    });
+
     // === NÚT CHẠY CODE ===
     const runBtn = document.getElementById('btn-run-code');
     if (runBtn) {

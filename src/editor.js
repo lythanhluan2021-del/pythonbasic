@@ -29,6 +29,10 @@ export class SublimeEditor {
     const savedFontSize = localStorage.getItem('pysublime_mobile_font_size');
     const initialFontSize = savedFontSize ? `${savedFontSize}px` : (isMobile ? "16px" : "14px");
 
+    // Trạng thái ngắt dòng code (Mặc định: FALSE - giữ trọn vẹn 1 câu lệnh trên 1 dòng để tránh gây hiểu nhầm cú pháp Python)
+    const savedWrap = localStorage.getItem('pysublime_editor_wrap');
+    this.isWrapMode = savedWrap === 'true'; // Mặc định là false (1 dòng nguyên vẹn, cuộn ngang)
+
     this.editor.setOptions({
       fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
       fontSize: initialFontSize,
@@ -36,7 +40,10 @@ export class SublimeEditor {
       useSoftTabs: true,
       showPrintMargin: false,
       highlightActiveLine: true,
-      wrap: true,
+      wrap: this.isWrapMode,
+      indentedSoftWrap: false,
+      autoScrollEditorIntoView: true,
+      hScrollBarAlwaysVisible: false,
       showFoldWidgets: true,
       cursorStyle: "smooth",
       behavioursEnabled: true,
@@ -66,6 +73,43 @@ export class SublimeEditor {
     this.editor.setValue(this.tabs[0].content, -1);
     this.renderTabs();
     this.updateStatusBar();
+    this.updateWrapButtonUI();
+  }
+
+  toggleWrapMode() {
+    if (!this.editor) return false;
+    this.isWrapMode = !this.editor.session.getUseWrapMode();
+    this.editor.session.setUseWrapMode(this.isWrapMode);
+    localStorage.setItem('pysublime_editor_wrap', String(this.isWrapMode));
+    this.updateWrapButtonUI();
+    return this.isWrapMode;
+  }
+
+  setWrapMode(enable) {
+    if (!this.editor) return;
+    this.isWrapMode = !!enable;
+    this.editor.session.setUseWrapMode(this.isWrapMode);
+    localStorage.setItem('pysublime_editor_wrap', String(this.isWrapMode));
+    this.updateWrapButtonUI();
+  }
+
+  updateWrapButtonUI() {
+    const btn = document.getElementById('btn-toggle-wrap');
+    const icon = document.getElementById('wrap-icon');
+    const text = document.getElementById('wrap-text');
+    const isWrap = this.editor ? this.editor.session.getUseWrapMode() : false;
+    if (btn) {
+      btn.classList.toggle('active', isWrap);
+      btn.title = isWrap
+        ? "Đang ngắt dòng (Bấm để giữ 1 dòng cuộn ngang)"
+        : "Đang giữ 1 dòng (Bấm để tự động ngắt dòng)";
+    }
+    if (icon) {
+      icon.textContent = isWrap ? '↩' : '↔';
+    }
+    if (text) {
+      text.textContent = isWrap ? 'Ngắt dòng' : '1 Dòng';
+    }
   }
 
   loadAceLibrary() {

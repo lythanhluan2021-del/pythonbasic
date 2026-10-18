@@ -248,7 +248,16 @@ class PySublimeApp {
       });
     }
 
-    // Nút mở Google Drive trong Menu tài khoản
+    // Nút đặt lại mã nguồn trong Menu tài khoản
+    const btnDropdownReset = document.getElementById('dropdown-btn-reset-code');
+    if (btnDropdownReset) {
+      btnDropdownReset.addEventListener('click', () => {
+        this.closeUserDropdown();
+        document.getElementById('btn-reset-current-code')?.click();
+      });
+    }
+
+    // Nút mở Google Drive trong Menu tài khoản (chỉ dành cho Admin)
     const btnDropdownDrive = document.getElementById('dropdown-btn-drive');
     if (btnDropdownDrive) {
       btnDropdownDrive.addEventListener('click', () => {
@@ -968,6 +977,16 @@ class PySublimeApp {
       }
       if (linkAdmin) {
         linkAdmin.style.display = isAdmin ? 'flex' : 'none';
+      }
+
+      // CHỈ ADMIN MỚI ĐƯỢC PHÉP XEM VÀ CẤU HÌNH GOOGLE DRIVE CMS
+      const btnDriveModal = document.getElementById('btn-open-drive-modal');
+      const dropdownBtnDrive = document.getElementById('dropdown-btn-drive');
+      if (btnDriveModal) {
+        btnDriveModal.style.display = isAdmin ? 'inline-flex' : 'none';
+      }
+      if (dropdownBtnDrive) {
+        dropdownBtnDrive.style.display = isAdmin ? 'flex' : 'none';
       }
     } else {
       if (badgeLabel) {
